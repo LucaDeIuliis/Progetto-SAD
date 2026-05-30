@@ -1,9 +1,9 @@
-package org.example.mediamusicplayer;
+package org.example.mediamusicplayer.controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 
-public class HelloController {
+public class MusicPlayerController {
     @FXML
     private Label welcomeText;
 
