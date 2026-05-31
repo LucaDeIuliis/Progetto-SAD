@@ -28,6 +28,7 @@
         <TextField fx:id="yearInput" promptText="Anno" prefWidth="70.0" />
 
         <Button text="Aggiungi" onAction="#onAddTrackClick" style="-fx-background-color: #4CAF50; -fx-text-fill: white;" />
+        <Button text="Elimina" onAction="#onDeleteTrackClick" style="-fx-background-color: #f44336; -fx-text-fill: white;" />
     </HBox>
 
 </VBox>

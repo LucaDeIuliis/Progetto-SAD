@@ -151,4 +151,19 @@ public class MusicPlayerController {
         alert.setContentText(messaggio);
         alert.showAndWait();
     }
+    // --- METODO DEL BOTTONE "ELIMINA" ---
+    @FXML
+    public void onDeleteTrackClick() {
+        // 1. Chiediamo alla tabella quale elemento è attualmente cliccato/selezionato
+        Track tracciaSelezionata = trackTable.getSelectionModel().getSelectedItem();
+
+        // 2. Controlliamo se l'utente ha effettivamente selezionato qualcosa
+        if (tracciaSelezionata != null) {
+            // Se c'è una traccia selezionata, la rimuoviamo dalla lista
+            listaCanzoni.remove(tracciaSelezionata);
+        } else {
+            // Se ha cliccato "Elimina" senza selezionare nulla, mostriamo un avviso
+            mostraErrore("Nessuna selezione", "Per favore, clicca su una traccia nella tabella prima di cliccare su Elimina.");
+        }
+    }
 }
