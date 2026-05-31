@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox alignment="CENTER" spacing="15.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="org.example.mediamusicplayer.controller.MusicPlayerController">
+
+    <TableView fx:id="trackTable" prefHeight="400.0" prefWidth="700.0">
+        <columns>
+            <TableColumn fx:id="titleColumn" text="Titolo" prefWidth="150.0" />
+            <TableColumn fx:id="authorColumn" text="Autore" prefWidth="150.0" />
+            <TableColumn fx:id="lengthColumn" text="Durata" prefWidth="100.0" />
+            <TableColumn fx:id="genreColumn" text="Genere" prefWidth="120.0" />
+            <TableColumn fx:id="yearColumn" text="Anno" prefWidth="80.0" />
+        </columns>
+    </TableView>
+
+    <HBox alignment="CENTER" spacing="10.0">
+        <TextField fx:id="titleInput" promptText="Titolo" prefWidth="120.0" />
+        <TextField fx:id="authorInput" promptText="Autore" prefWidth="120.0" />
+        <TextField fx:id="lengthInput" promptText="Durata (es. 3:45)" prefWidth="100.0" />
+        <TextField fx:id="genreInput" promptText="Genere" prefWidth="100.0" />
+        <TextField fx:id="yearInput" promptText="Anno" prefWidth="70.0" />
+
+        <Button text="Aggiungi" onAction="#onAddTrackClick" style="-fx-background-color: #4CAF50; -fx-text-fill: white;" />
+    </HBox>
+
+</VBox>
