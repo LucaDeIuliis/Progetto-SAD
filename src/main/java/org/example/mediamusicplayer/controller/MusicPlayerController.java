@@ -15,7 +15,6 @@ import java.time.Year;
 
 public class MusicPlayerController {
 
-    // --- COLLEGAMENTI ALLA TABELLA ---
     @FXML private TableView<Track> trackTable;
     @FXML private TableColumn<Track, String> titleColumn;
     @FXML private TableColumn<Track, String> authorColumn;
@@ -23,7 +22,6 @@ public class MusicPlayerController {
     @FXML private TableColumn<Track, String> genreColumn;
     @FXML private TableColumn<Track, Year> yearColumn;
 
-    // --- COLLEGAMENTI ALLE CASELLE DI TESTO ---
     @FXML private TextField titleInput;
     @FXML private TextField authorInput;
     @FXML private TextField lengthInput;
@@ -46,69 +44,109 @@ public class MusicPlayerController {
 
     @FXML
     public void onAddTrackClick() {
+        String title = titleInput.getText();
+        String author = authorInput.getText();
+        String lengthStr = lengthInput.getText();
+        String genre = genreInput.getText();
+        String yearStr = yearInput.getText();
+
+        // ==========================================
+        // FASE 1: CONTROLLO CAMPI VUOTI (Uno per uno)
+        // ==========================================
+        if (title == null || title.trim().isEmpty()) {
+            mostraErrore("Titolo mancante", "Per favore, inserisci il titolo della traccia.");
+            return;
+        }
+        if (author == null || author.trim().isEmpty()) {
+            mostraErrore("Autore mancante", "Per favore, inserisci l'autore della traccia.");
+            return;
+        }
+        if (genre == null || genre.trim().isEmpty()) {
+            mostraErrore("Genere mancante", "Per favore, inserisci il genere musicale.");
+            return;
+        }
+        if (yearStr == null || yearStr.trim().isEmpty()) {
+            mostraErrore("Anno mancante", "Per favore, inserisci l'anno di pubblicazione.");
+            return;
+        }
+        if (lengthStr == null || lengthStr.trim().isEmpty()) {
+            mostraErrore("Durata mancante", "Per favore, inserisci la durata della traccia.");
+            return;
+        }
+
+        // ==========================================
+        // FASE 2: GESTIONE ANNO
+        // ==========================================
+        Year year;
         try {
-            String title = titleInput.getText();
-            String author = authorInput.getText();
-            String lengthStr = lengthInput.getText();
-            String genre = genreInput.getText();
-            String yearStr = yearInput.getText();
+            year = Year.parse(yearStr);
+        } catch (Exception e) {
+            mostraErrore("Formato Anno Errato", "L'anno deve essere un numero valido (es. 2023). Hai inserito delle lettere?");
+            return; // Blocca se l'utente ha scritto lettere
+        }
 
-            // 1. Controllo campi vuoti
-            if (title == null || title.trim().isEmpty() ||
-                    author == null || author.trim().isEmpty() ||
-                    genre == null || genre.trim().isEmpty()) {
+        Year annoCorrente = Year.now();
+        if (year.getValue() < 0) {
+            mostraErrore("Anno negativo", "L'anno di pubblicazione non può essere un numero negativo.");
+            return;
+        }
+        if (year.isAfter(annoCorrente)) {
+            mostraErrore("Anno dal futuro", "L'anno non può essere nel futuro! Inserisci un anno fino al " + annoCorrente.getValue() + ".");
+            return;
+        }
 
-                mostraErrore("Dati Mancanti", "Il Titolo, l'Autore e il Genere sono campi obbligatori!");
-                return;
-            }
-
-            // 2. CONVERSIONE E CONTROLLO ANNO
-            Year year = Year.parse(yearStr);
-            if (year.getValue() < 0) {
-                mostraErrore("Anno non valido", "L'anno non può essere un valore negativo!");
-                return; // Blocchiamo l'inserimento
-            }
-
-            // 3. CONVERSIONE E CONTROLLO DURATA
-            long totalSeconds = 0;
+        // ==========================================
+        // FASE 3: GESTIONE DURATA
+        // ==========================================
+        long totalSeconds = 0;
+        try {
             if (lengthStr.contains(":")) {
                 String[] parts = lengthStr.split(":");
+                // Controllo extra: assicuriamoci che abbia scritto mm:ss (es. non 3:45:10)
+                if (parts.length != 2) throw new NumberFormatException();
+
                 long min = Long.parseLong(parts[0]);
                 long sec = Long.parseLong(parts[1]);
+
+                // Controllo extra sui secondi (non possono essere es. 3:75)
+                if (sec >= 60 || sec < 0 || min < 0) throw new NumberFormatException();
+
                 totalSeconds = (min * 60) + sec;
             } else {
                 totalSeconds = Long.parseLong(lengthStr);
             }
-
-            if (totalSeconds < 1) {
-                mostraErrore("Durata non valida", "La durata della traccia non può essere negativa o zero!");
-                return; // Blocchiamo l'inserimento
-            }
-            Duration length = Duration.ofSeconds(totalSeconds);
-
-            // 4. Creazione e aggiunta
-            Track nuovaTraccia = new Track(title, author, length, genre, year);
-            listaCanzoni.add(nuovaTraccia);
-
-            // 5. Pulizia
-            titleInput.clear();
-            authorInput.clear();
-            lengthInput.clear();
-            genreInput.clear();
-            yearInput.clear();
-
         } catch (Exception e) {
-            mostraErrore("Tipo di dati sbagliati",
-                    "Attenzione! Hai inserito del testo non valido in un campo numerico oppure quest'ultimo non risulta compilato.\n\n" +
-                            "- Anno: deve essere un numero positivo (es. 2023)\n" +
-                            "- Durata: deve essere in formato minuti:secondi (es. 3:45) o in secondi totali (es. 225)");
+            mostraErrore("Formato Durata Errato",
+                    "La durata deve essere in formato minuti:secondi(es. 3:45)\n" +
+                            "oppure in secondi totali (es. 225).\n\n" +
+                            "Assicurati di non aver inserito lettere o simboli\n"+
+                    "e che i minuti e i secondi siano compresi tra 0-59");
+            return; // Blocca se il formato non è un numero o è un formato non riconosciuto
         }
+
+        if (totalSeconds < 1) {
+            mostraErrore("Durata non valida", "La durata della traccia non può essere zero o negativa!");
+            return;
+        }
+        Duration length = Duration.ofSeconds(totalSeconds);
+
+        // ==========================================
+        // FASE 4: INSERIMENTO E PULIZIA
+        // ==========================================
+        Track nuovaTraccia = new Track(title, author, length, genre, year);
+        listaCanzoni.add(nuovaTraccia);
+
+        titleInput.clear();
+        authorInput.clear();
+        lengthInput.clear();
+        genreInput.clear();
+        yearInput.clear();
     }
 
     // --- METODO DI SUPPORTO PER CREARE I POP-UP ---
     private void mostraErrore(String titolo, String messaggio) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Errore");
+        alert.setTitle("Errore di Inserimento");
         alert.setHeaderText(titolo);
         alert.setContentText(messaggio);
         alert.showAndWait();
