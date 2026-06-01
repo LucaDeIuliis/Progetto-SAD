@@ -1,4 +1,4 @@
-🎶 # Media Music Player
+🎶 ## Media Music Player
 
 Applicazione desktop sviluppata in Java per la gestione di tracce musicali e playlist.  
 Il progetto è stato realizzato come **Project Work** per il corso di **Software Architecture Design**, seguendo un processo di sviluppo ispirato a **Scrum**.
