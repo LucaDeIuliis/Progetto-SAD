@@ -142,42 +142,6 @@ Make sure the following tools are installed:
 3. Let the IDE import dependencies.
 4. Run the main JavaFX application class.
 
-### Run from terminal
-
-If the project uses Maven:
-
-```bash
-mvn clean javafx:run
-```
-
-If the project uses Gradle:
-
-```bash
-./gradlew run
-```
-
-Update this section according to the final build tool used by the project.
-
----
-
-## How to run tests
-
-If the project uses Maven:
-
-```bash
-mvn test
-```
-
-If the project uses Gradle:
-
-```bash
-./gradlew test
-```
-
-Unit tests should cover at least the public behavior of the business-logic classes and validation components.
-
----
-
 ## Scrum process
 
 The project is developed using Scrum.
