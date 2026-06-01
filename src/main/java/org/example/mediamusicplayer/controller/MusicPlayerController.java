@@ -98,7 +98,7 @@ public class MusicPlayerController {
         // ==========================================
         // FASE 3: GESTIONE DURATA
         // ==========================================
-        long totalSeconds = 0;
+        long totalSeconds;
         try {
             if (lengthStr.contains(":")) {
                 String[] parts = lengthStr.split(":");
@@ -117,10 +117,12 @@ public class MusicPlayerController {
             }
         } catch (Exception e) {
             mostraErrore("Formato Durata Errato",
-                    "La durata deve essere in formato minuti:secondi(es. 3:45)\n" +
-                            "oppure in secondi totali (es. 225).\n\n" +
-                            "Assicurati di non aver inserito lettere o simboli\n"+
-                    "e che i minuti e i secondi siano compresi tra 0-59");
+                    """
+                            La durata deve essere in formato minuti:secondi(es. 3:45)
+                            oppure in secondi totali (es. 225).
+                            
+                            Assicurati di non aver inserito lettere o simboli
+                            e che i minuti e i secondi siano compresi tra 0-59""");
             return; // Blocca se il formato non è un numero o è un formato non riconosciuto
         }
 
