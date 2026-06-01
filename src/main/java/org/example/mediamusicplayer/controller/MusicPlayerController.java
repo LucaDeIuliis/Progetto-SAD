@@ -7,14 +7,19 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
+import org.example.mediamusicplayer.exception.PlaylistValidationException;
+import org.example.mediamusicplayer.exception.TrackValidationException;
+import org.example.mediamusicplayer.model.Playlist;
 import org.example.mediamusicplayer.model.Track;
+import org.example.mediamusicplayer.service.PlaylistService;
 import org.example.mediamusicplayer.service.TrackService;
 import org.example.mediamusicplayer.util.AlertUtil;
-import org.example.mediamusicplayer.exception.TrackValidationException;
 
 import java.time.Year;
 
 public class MusicPlayerController {
+
+    // --- TABELLA TRACCE ---
 
     @FXML private TableView<Track> trackTable;
     @FXML private TableColumn<Track, String> titleColumn;
@@ -23,19 +28,38 @@ public class MusicPlayerController {
     @FXML private TableColumn<Track, String> genreColumn;
     @FXML private TableColumn<Track, Year> yearColumn;
 
+    // --- INPUT TRACCE ---
+
     @FXML private TextField titleInput;
     @FXML private TextField authorInput;
     @FXML private TextField lengthInput;
     @FXML private TextField genreInput;
     @FXML private TextField yearInput;
 
-    private ObservableList<Track> listaCanzoni;
+    // --- TABELLA PLAYLIST ---
 
-    // Istanziamo il nostro Service per delegargli la logica
-    private TrackService trackService = new TrackService();
+    @FXML private TableView<Playlist> playlistTable;
+    @FXML private TableColumn<Playlist, String> playlistNameColumn;
+    @FXML private TableColumn<Playlist, Integer> playlistTracksColumn;
+
+    // --- INPUT PLAYLIST ---
+
+    @FXML private TextField playlistNameInput;
+
+    // --- LISTE OSSERVABILI ---
+
+    private ObservableList<Track> listaCanzoni;
+    private ObservableList<Playlist> listaPlaylist;
+
+    // --- SERVICE ---
+
+    private final TrackService trackService = new TrackService();
+    private final PlaylistService playlistService = new PlaylistService();
 
     @FXML
     public void initialize() {
+
+        // Configurazione colonne tracce
         titleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
         authorColumn.setCellValueFactory(new PropertyValueFactory<>("author"));
         genreColumn.setCellValueFactory(new PropertyValueFactory<>("genre"));
@@ -44,13 +68,18 @@ public class MusicPlayerController {
 
         listaCanzoni = FXCollections.observableArrayList();
         trackTable.setItems(listaCanzoni);
+
+        // Configurazione colonne playlist
+        playlistNameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+        playlistTracksColumn.setCellValueFactory(new PropertyValueFactory<>("numberOfTracks"));
+
+        listaPlaylist = FXCollections.observableArrayList();
+        playlistTable.setItems(listaPlaylist);
     }
 
     @FXML
     public void onAddTrackClick() {
         try {
-            // IL CONTROLLER FA SOLO DA PASSACARTE:
-            // Prende il testo dall'interfaccia e lo manda al Service.
             Track nuovaTraccia = trackService.createTrack(
                     titleInput.getText(),
                     authorInput.getText(),
@@ -59,10 +88,8 @@ public class MusicPlayerController {
                     yearInput.getText()
             );
 
-            // Se il Service non ha lanciato eccezioni, aggiungiamo la traccia!
             listaCanzoni.add(nuovaTraccia);
 
-            // Pulizia
             titleInput.clear();
             authorInput.clear();
             lengthInput.clear();
@@ -70,7 +97,6 @@ public class MusicPlayerController {
             yearInput.clear();
 
         } catch (TrackValidationException e) {
-            // SE IL SERVICE TROVA UN ERRORE, USIAMO LA CLASSE UTIL PER MOSTRARLO!
             AlertUtil.showError(e.getHeader(), e.getMessage());
         }
     }
@@ -82,8 +108,40 @@ public class MusicPlayerController {
         if (tracciaSelezionata != null) {
             listaCanzoni.remove(tracciaSelezionata);
         } else {
-            // Usiamo il nostro AlertUtil esterno!
-            AlertUtil.showError("Nessuna selezione", "Per favore, clicca su una traccia nella tabella prima di cliccare su Elimina.");
+            AlertUtil.showError(
+                    "Nessuna selezione",
+                    "Per favore, clicca su una traccia nella tabella prima di cliccare su Elimina."
+            );
+        }
+    }
+
+    @FXML
+    public void onAddPlaylistClick() {
+        try {
+            Playlist nuovaPlaylist = playlistService.createPlaylist(
+                    playlistNameInput.getText(),
+                    listaPlaylist
+            );
+
+            listaPlaylist.add(nuovaPlaylist);
+            playlistNameInput.clear();
+
+        } catch (PlaylistValidationException e) {
+            AlertUtil.showError(e.getHeader(), e.getMessage());
+        }
+    }
+
+    @FXML
+    public void onDeletePlaylistClick() {
+        try {
+            Playlist playlistSelezionata = playlistTable.getSelectionModel().getSelectedItem();
+
+            playlistService.deletePlaylist(playlistSelezionata);
+
+            listaPlaylist.remove(playlistSelezionata);
+
+        } catch (PlaylistValidationException e) {
+            AlertUtil.showError(e.getHeader(), e.getMessage());
         }
     }
 }

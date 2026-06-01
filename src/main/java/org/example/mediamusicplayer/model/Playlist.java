@@ -1,7 +1,6 @@
 package org.example.mediamusicplayer.model;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -11,14 +10,14 @@ public class Playlist {
     private String name;
     private final List<Track> tracks;
 
-    // Costruttore
+    // Costruttore per creare una nuova playlist
     public Playlist(String name) {
         this.id = UUID.randomUUID().toString();
         this.name = name;
         this.tracks = new ArrayList<>();
     }
 
-    // Costruttore completo (opzionale)
+    // Costruttore completo, utile in futuro per persistenza/caricamento dati
     public Playlist(String id, String name, List<Track> tracks) {
         this.id = id;
         this.name = name;
@@ -39,7 +38,8 @@ public class Playlist {
         this.name = name;
     }
 
-    // Restituisce una copia per evitare modifiche esterne
+    // Restituisce una copia della lista,
+    // così dall'esterno non si modifica direttamente la lista interna
     public List<Track> getTracks() {
         return new ArrayList<>(tracks);
     }
@@ -47,25 +47,18 @@ public class Playlist {
     // --- METODI DEL MODELLO ---
 
     public void addTrack(Track track) {
-        if (track != null) {
-            tracks.add(track);
-        }
+        tracks.add(track);
     }
 
     public boolean removeTrack(Track track) {
         return tracks.remove(track);
     }
 
-    public void reorderTrack(int fromIndex, int toIndex) {
-        if (fromIndex < 0 || fromIndex >= tracks.size()
-                || toIndex < 0 || toIndex >= tracks.size()) {
-            throw new IndexOutOfBoundsException("Indice non valido");
-        }
-
-        Collections.swap(tracks, fromIndex, toIndex);
+    public boolean containsTrack(Track track) {
+        return tracks.contains(track);
     }
 
-    public int size() {
+    public int getNumberOfTracks() {
         return tracks.size();
     }
 
@@ -75,7 +68,6 @@ public class Playlist {
 
     @Override
     public String toString() {
-        return name + " (" + tracks.size() + " tracks)";
+        return name;
     }
 }
-
