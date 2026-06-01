@@ -1,7 +1,6 @@
 package org.example.mediamusicplayer.exception;
 
 public class PlaylistValidationException extends RuntimeException {
-
     private final String header;
 
     public PlaylistValidationException(String header, String message) {

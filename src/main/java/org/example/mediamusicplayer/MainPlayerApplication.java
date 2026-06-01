@@ -10,7 +10,7 @@ public class MainPlayerApplication extends javafx.application.Application {
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(MainPlayerApplication.class.getResource("player-view.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 800, 700);
+        Scene scene = new Scene(fxmlLoader.load(), 1000, 700);
         stage.setTitle("Music Playlist Manager");
         stage.setScene(scene);
         stage.show();

@@ -1,69 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox alignment="CENTER" spacing="15.0"
-      xmlns="http://javafx.com/javafx/17"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="org.example.mediamusicplayer.controller.MusicPlayerController">
+<BorderPane prefHeight="600.0" prefWidth="950.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.example.mediamusicplayer.controller.MusicPlayerController">
 
-    <!-- SEZIONE TRACCE -->
-    <Label text="Gestione Tracce" style="-fx-font-size: 16px; -fx-font-weight: bold;" />
+    <left>
+        <VBox spacing="10.0" prefWidth="220.0" style="-fx-background-color: #f4f4f4; -fx-border-color: #cccccc; -fx-border-width: 0 1 0 0;">
+            <padding>
+                <Insets top="15.0" right="10.0" bottom="15.0" left="10.0"/>
+            </padding>
 
-    <TableView fx:id="trackTable" prefHeight="300.0" prefWidth="700.0">
-        <columns>
-            <TableColumn fx:id="titleColumn" text="Titolo" prefWidth="150.0" />
-            <TableColumn fx:id="authorColumn" text="Autore" prefWidth="150.0" />
-            <TableColumn fx:id="lengthColumn" text="Durata" prefWidth="100.0" />
-            <TableColumn fx:id="genreColumn" text="Genere" prefWidth="120.0" />
-            <TableColumn fx:id="yearColumn" text="Anno" prefWidth="80.0" />
-        </columns>
-    </TableView>
+            <Button text="🎵 Gestione Tutte le Tracce" onAction="#onViewAllTracksClick" maxWidth="Infinity" style="-fx-font-weight: bold; -fx-background-color: #e0e0e0;" />
 
-    <HBox alignment="CENTER" spacing="10.0">
-        <TextField fx:id="titleInput" promptText="Titolo" prefWidth="120.0" />
-        <TextField fx:id="authorInput" promptText="Autore" prefWidth="120.0" />
-        <TextField fx:id="lengthInput" promptText="Durata (es. 3:45)" prefWidth="120.0" />
-        <TextField fx:id="genreInput" promptText="Genere" prefWidth="100.0" />
-        <TextField fx:id="yearInput" promptText="Anno" prefWidth="70.0" />
+            <Label text="LE TUE PLAYLIST" style="-fx-font-weight: bold; -fx-font-size: 14px;" />
+            <ListView fx:id="playlistListView" VBox.vgrow="ALWAYS" />
 
-        <Button text="Aggiungi"
-                onAction="#onAddTrackClick"
-                style="-fx-background-color: #4CAF50; -fx-text-fill: white;" />
+            <VBox spacing="8.0">
+                <TextField fx:id="newPlaylistInput" promptText="Nome nuova playlist..." />
+                <Button text="Crea Playlist" onAction="#onAddPlaylistClick" maxWidth="Infinity" style="-fx-background-color: #2196F3; -fx-text-fill: white;" />
+            </VBox>
+        </VBox>
+    </left>
 
-        <Button text="Elimina"
-                onAction="#onDeleteTrackClick"
-                style="-fx-background-color: #f44336; -fx-text-fill: white;" />
-    </HBox>
+    <center>
+        <VBox alignment="CENTER" spacing="15.0">
+            <padding>
+                <Insets top="15.0" right="15.0" bottom="15.0" left="15.0"/>
+            </padding>
 
-    <!-- SEZIONE PLAYLIST -->
-    <Label text="Gestione Playlist" style="-fx-font-size: 16px; -fx-font-weight: bold;" />
+            <Label fx:id="currentPlaylistLabel" text="Gestione Tracce: Tutte le canzoni" style="-fx-font-size: 18px; -fx-font-weight: bold;" />
 
-    <TableView fx:id="playlistTable" prefHeight="220.0" prefWidth="400.0">
-        <columns>
-            <TableColumn fx:id="playlistNameColumn" text="Nome Playlist" prefWidth="250.0" />
-            <TableColumn fx:id="playlistTracksColumn" text="Numero Tracce" prefWidth="140.0" />
-        </columns>
-    </TableView>
+            <TableView fx:id="trackTable" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="titleColumn" text="Titolo" prefWidth="150.0" />
+                    <TableColumn fx:id="authorColumn" text="Autore" prefWidth="150.0" />
+                    <TableColumn fx:id="lengthColumn" text="Durata" prefWidth="100.0" />
+                    <TableColumn fx:id="genreColumn" text="Genere" prefWidth="120.0" />
+                    <TableColumn fx:id="yearColumn" text="Anno" prefWidth="80.0" />
+                </columns>
+            </TableView>
 
-    <HBox alignment="CENTER" spacing="10.0">
-        <TextField fx:id="playlistNameInput"
-                   promptText="Nome playlist"
-                   prefWidth="220.0" />
+            <HBox alignment="CENTER" spacing="10.0">
+                <TextField fx:id="titleInput" promptText="Titolo" prefWidth="120.0" />
+                <TextField fx:id="authorInput" promptText="Autore" prefWidth="120.0" />
+                <TextField fx:id="lengthInput" promptText="Durata (es. 3:45)" prefWidth="100.0" />
+                <TextField fx:id="genreInput" promptText="Genere" prefWidth="100.0" />
+                <TextField fx:id="yearInput" promptText="Anno" prefWidth="70.0" />
 
-        <Button text="Crea Playlist"
-                onAction="#onAddPlaylistClick"
-                style="-fx-background-color: #2196F3; -fx-text-fill: white;" />
+                <Button text="Crea Traccia" onAction="#onAddTrackClick" style="-fx-background-color: #4CAF50; -fx-text-fill: white;" />
+                <Button text="Elimina" onAction="#onDeleteTrackClick" style="-fx-background-color: #f44336; -fx-text-fill: white;" />
+            </HBox>
 
-        <Button text="Elimina Playlist"
-                onAction="#onDeletePlaylistClick"
-                style="-fx-background-color: #f44336; -fx-text-fill: white;" />
-    </HBox>
+            <HBox alignment="CENTER" spacing="10.0" style="-fx-padding: 10 0 0 0; -fx-border-color: #cccccc; -fx-border-width: 1 0 0 0;">
+                <Label text="Aggiungi traccia selezionata a:" />
+                <ComboBox fx:id="playlistComboBox" promptText="Scegli Playlist..." prefWidth="150.0" />
+                <Button text="Aggiungi a Playlist" onAction="#onAssignToPlaylistClick" style="-fx-background-color: #FF9800; -fx-text-fill: white;" />
+            </HBox>
 
-</VBox>
+        </VBox>
+    </center>
+</BorderPane>
