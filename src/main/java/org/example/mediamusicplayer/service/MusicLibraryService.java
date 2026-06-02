@@ -34,6 +34,12 @@ public class MusicLibraryService {
         }
     }
 
+    // Rimuove una playlist dalla libreria
+    public void deletePlaylist(MusicLibrary libreria, Playlist playlist) {
+        if (playlist != null) {
+            libreria.getPlaylists().remove(playlist);
+        }
+    }
     // Rimuove in modo sicuro una traccia sia dal magazzino che da tutte le playlist
     public void deleteTrackGlobal(MusicLibrary libreria, Track track) {
         if (track != null) {

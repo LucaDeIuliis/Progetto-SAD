@@ -166,6 +166,26 @@ public class MusicPlayerController {
         }
     }
 
+    // --- ELIMINA PLAYLIST ---
+    @FXML
+    public void onDeletePlaylistClick() {
+        // 1. Capiamo quale playlist ha selezionato l'utente a sinistra
+        Playlist playlistSelezionata = playlistListView.getSelectionModel().getSelectedItem();
+
+        if (playlistSelezionata == null) {
+            AlertUtil.showError("Nessuna selezione", "Seleziona la playlist che vuoi eliminare dalla barra laterale.");
+            return;
+        }
+
+        // 2. Usiamo il Service per eliminarla dal magazzino
+        libraryService.deletePlaylist(libreria, playlistSelezionata);
+
+        // 3. CASO LIMITE: Stavamo guardando proprio la playlist eliminata?
+        if (playlistAttuale == playlistSelezionata) {
+            // Allora torniamo alla schermata "Tutte le tracce" per evitare di restare in una schermata "fantasma"
+            onViewAllTracksClick();
+        }
+    }
     // --- ELIMINA TRACCIA ---
     @FXML
     public void onDeleteTrackClick() {
