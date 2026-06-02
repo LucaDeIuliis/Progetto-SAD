@@ -19,6 +19,8 @@ Le User Story considerate per il primo sprint sono:
 | US-02 | Visualizzazione tracce | Mostra l'elenco delle tracce presenti nel sistema. |
 | US-04 | Eliminazione traccia | Permette di rimuovere una traccia dall'elenco. |
 | US-05 | Creazione playlist | Permette all'utente di creare una nuova playlist. |
+| US-06 | Aggiunta di una traccia a una playlist. |
+| US-07 | Rimozione traccia da una playlist. |
 | US-08 | Visualizzazione playlist | Mostra le playlist create. |
 | US-10 | Eliminazione playlist | Permette di eliminare una playlist esistente. |
 
