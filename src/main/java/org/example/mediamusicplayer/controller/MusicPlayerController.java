@@ -13,10 +13,11 @@ import org.example.mediamusicplayer.model.MusicLibrary;
 import org.example.mediamusicplayer.model.Playlist;
 import org.example.mediamusicplayer.model.Track;
 import org.example.mediamusicplayer.service.TrackService;
-import org.example.mediamusicplayer.service.PlaylistService; // <-- IMPORTATO
+import org.example.mediamusicplayer.service.PlaylistService;
+import org.example.mediamusicplayer.service.MusicLibraryService; // <-- IMPORTATO
 import org.example.mediamusicplayer.util.AlertUtil;
 import org.example.mediamusicplayer.exception.TrackValidationException;
-import org.example.mediamusicplayer.exception.PlaylistValidationException; // <-- IMPORTATO
+import org.example.mediamusicplayer.exception.PlaylistValidationException;
 
 import java.time.Year;
 
@@ -47,13 +48,15 @@ public class MusicPlayerController {
 
     // I nostri Service per la logica pura
     private TrackService trackService;
-    private PlaylistService playlistService; // <-- AGGIUNTO
+    private PlaylistService playlistService;
+    private MusicLibraryService libraryService; // <-- AGGIUNTO
 
     @FXML
     public void initialize() {
         // Inizializziamo i Service e la libreria
         trackService = new TrackService();
-        playlistService = new PlaylistService(); // <-- INIZIALIZZATO
+        playlistService = new PlaylistService();
+        libraryService = new MusicLibraryService(); // <-- INIZIALIZZATO
         libreria = new MusicLibrary();
 
         titleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
@@ -88,15 +91,16 @@ public class MusicPlayerController {
         currentPlaylistLabel.setText("Gestione Tracce: Tutte le canzoni");
     }
 
-    // --- CREA PLAYLIST (ORA USA IL SERVICE!) ---
+    // --- CREA PLAYLIST ---
     @FXML
     public void onAddPlaylistClick() {
         try {
             // Deleghiamo al Service la creazione e il controllo dei duplicati
             Playlist nuovaPlaylist = playlistService.createPlaylist(newPlaylistInput.getText(), libreria);
 
-            // Se il Service dà l'OK, aggiungiamo alla libreria
-            libreria.addPlaylist(nuovaPlaylist);
+            // ORA USIAMO IL NUOVO SERVICE DELLA LIBRERIA
+            libraryService.addPlaylist(libreria, nuovaPlaylist);
+
             newPlaylistInput.clear();
             playlistListView.getSelectionModel().select(nuovaPlaylist);
 
@@ -115,8 +119,8 @@ public class MusicPlayerController {
                     lengthInput.getText(), genreInput.getText(), yearInput.getText()
             );
 
-            // Adesso aggiungiamo SEMPRE la traccia al magazzino globale
-            libreria.addTrackToLibrary(nuovaTraccia);
+            // ORA USIAMO IL NUOVO SERVICE PER AGGIUNGERE LA TRACCIA AL MAGAZZINO
+            libraryService.addTrackToLibrary(libreria, nuovaTraccia);
 
             // Se l'utente in questo momento sta visualizzando una specifica playlist,
             // la aggiungiamo automaticamente anche a quella!
@@ -174,13 +178,9 @@ public class MusicPlayerController {
 
         if (playlistAttuale == null) {
             // SOGLIA DI ATTENZIONE ALTA: Siamo nella "Gestione Tutte le tracce".
-            // Se eliminiamo qui, cancelliamo la canzone globalmente (anche dalle playlist!)
-            libreria.getAllTracks().remove(tracciaSelezionata);
+            // ORA DELEGHIAMO L'ELIMINAZIONE GLOBALE (A CASCATA) AL SERVICE!
+            libraryService.deleteTrackGlobal(libreria, tracciaSelezionata);
 
-            // Ripuliamo a cascata tutte le playlist che la contenevano
-            for(Playlist p : libreria.getPlaylists()) {
-                p.removeTrack(tracciaSelezionata);
-            }
         } else {
             // Rimuoviamo la canzone SOLO dalla playlist che stiamo guardando
             playlistAttuale.removeTrack(tracciaSelezionata);

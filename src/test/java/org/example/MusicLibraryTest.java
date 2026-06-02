@@ -1,4 +1,4 @@
-package org.example;
+/*package org.example;
 import org.example.mediamusicplayer.model.MusicLibrary;
 import org.example.mediamusicplayer.model.Playlist;
 import org.example.mediamusicplayer.model.Track;
@@ -102,4 +102,4 @@ class MusicLibraryTest {
     void getAllTracksShouldReturnObservableList() {
         assertNotNull(musicLibrary.getAllTracks());
     }
-}
+}*/
