@@ -7,10 +7,11 @@ public class Track {
 
     private String title;
     private String author;
-    private Duration length;
+    private Duration length; // Perfetto! Usiamo Duration
     private String genre;
     private Year year;
 
+    // Costruttore
     public Track(String title, String author, Duration length, String genre, Year year) {
         this.title = title;
         this.author = author;
@@ -19,54 +20,29 @@ public class Track {
         this.year = year;
     }
 
-    public String getTitle() {
-        return title;
-    }
+    // --- GETTERS E SETTERS ---
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
+    public String getAuthor() { return author; }
+    public void setAuthor(String author) { this.author = author; }
 
-    public String getAuthor() {
-        return author;
-    }
+    public Duration getLength() { return length; }
+    public void setLength(Duration length) { this.length = length; }
 
-    public void setAuthor(String author) {
-        this.author = author;
-    }
+    public String getGenre() { return genre; }
+    public void setGenre(String genre) { this.genre = genre; }
 
-    public Duration getLength() {
-        return length;
-    }
+    public Year getYear() { return year; }
+    public void setYear(Year year) { this.year = year; }
 
-    public void setLength(Duration length) {
-        this.length = length;
-    }
-
-    public String getGenre() {
-        return genre;
-    }
-
-    public void setGenre(String genre) {
-        this.genre = genre;
-    }
-
-    public Year getYear() {
-        return year;
-    }
-
-    public void setYear(Year year) {
-        this.year = year;
-    }
-
-    // --- METODO DI SUPPORTO PER LA FORMATTAZIONE DELLA DURATA ---
+    // --- METODO PER LA GRAFICA (JavaFX) ---
+    // Guarda quanto è più pulito adesso grazie a Duration!
     public String getFormattedLength() {
-        if (length == null) {
-            return "0:00";
-        }
+        if (length == null) return "0:00";
 
-        long minutes = length.toMinutes();
-        int seconds = length.toSecondsPart();
+        long minutes = length.toMinutes(); // Estrae i minuti totali
+        int seconds = length.toSecondsPart(); // Estrae solo i secondi rimanenti (es. i 45 di "3:45")
 
         return String.format("%d:%02d", minutes, seconds);
     }

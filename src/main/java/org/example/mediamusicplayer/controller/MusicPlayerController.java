@@ -8,16 +8,17 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.collections.FXCollections;
-import org.example.mediamusicplayer.exception.PlaylistValidationException;
-import org.example.mediamusicplayer.exception.TrackValidationException;
+
 import org.example.mediamusicplayer.model.MusicLibrary;
 import org.example.mediamusicplayer.model.Playlist;
 import org.example.mediamusicplayer.model.Track;
-import org.example.mediamusicplayer.service.MusicLibraryService;
-import org.example.mediamusicplayer.service.PlaylistService;
 import org.example.mediamusicplayer.service.TrackService;
+import org.example.mediamusicplayer.service.PlaylistService;
+import org.example.mediamusicplayer.service.MusicLibraryService; // <-- IMPORTATO
 import org.example.mediamusicplayer.util.AlertUtil;
+import org.example.mediamusicplayer.exception.TrackValidationException;
+import org.example.mediamusicplayer.exception.PlaylistValidationException;
+
 import java.time.Year;
 
 public class MusicPlayerController {
@@ -26,6 +27,7 @@ public class MusicPlayerController {
     @FXML private TextField newPlaylistInput;
     @FXML private Label currentPlaylistLabel;
 
+    // Menu a tendina per assegnare le tracce
     @FXML private ComboBox<Playlist> playlistComboBox;
 
     @FXML private TableView<Track> trackTable;
@@ -42,269 +44,166 @@ public class MusicPlayerController {
     @FXML private TextField yearInput;
 
     private MusicLibrary libreria;
-    private Playlist playlistAttuale;
+    private Playlist playlistAttuale;      // Se null, significa che stiamo guardando "Tutte le tracce"
 
+    // I nostri Service per la logica pura
     private TrackService trackService;
     private PlaylistService playlistService;
-    private MusicLibraryService libraryService;
+    private MusicLibraryService libraryService; // <-- AGGIUNTO
 
     @FXML
     public void initialize() {
-        inizializzaService();
-        inizializzaLibreria();
-        inizializzaTabellaTracce();
-        inizializzaComponentiPlaylist();
-        inizializzaListenerPlaylist();
-    }
-
-    private void inizializzaService() {
+        // Inizializziamo i Service e la libreria
         trackService = new TrackService();
         playlistService = new PlaylistService();
-        libraryService = new MusicLibraryService();
-    }
-
-    private void inizializzaLibreria() {
+        libraryService = new MusicLibraryService(); // <-- INIZIALIZZATO
         libreria = new MusicLibrary();
-        playlistAttuale = null;
-    }
 
-    private void inizializzaTabellaTracce() {
         titleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
         authorColumn.setCellValueFactory(new PropertyValueFactory<>("author"));
         genreColumn.setCellValueFactory(new PropertyValueFactory<>("genre"));
         yearColumn.setCellValueFactory(new PropertyValueFactory<>("year"));
         lengthColumn.setCellValueFactory(new PropertyValueFactory<>("formattedLength"));
 
-        trackTable.setItems(libreria.getAllTracks());
-    }
-
-    private void inizializzaComponentiPlaylist() {
         playlistListView.setItems(libreria.getPlaylists());
+
+        // Colleghiamo le stesse playlist anche al menu a tendina in basso!
         playlistComboBox.setItems(libreria.getPlaylists());
-        currentPlaylistLabel.setText("Tracce disponibili");
+
+        // All'avvio, mostriamo il magazzino globale
+        trackTable.setItems(libreria.getAllTracks());
+
+        playlistListView.getSelectionModel().selectedItemProperty().addListener((obs, vecchia, nuova) -> {
+            if (nuova != null) {
+                playlistAttuale = nuova;
+                currentPlaylistLabel.setText("Stai ascoltando Playlist: " + playlistAttuale.getName());
+                trackTable.setItems(playlistAttuale.getTracks());
+            }
+        });
     }
 
-    private void inizializzaListenerPlaylist() {
-        playlistListView.getSelectionModel()
-                .selectedItemProperty()
-                .addListener((obs, vecchiaPlaylist, nuovaPlaylist) -> {
-                    if (nuovaPlaylist != null) {
-                        mostraPlaylist(nuovaPlaylist);
-                    }
-                });
-    }
-
+    // --- TORNA A "TUTTE LE TRACCE" ---
     @FXML
     public void onViewAllTracksClick() {
-        playlistAttuale = null;
-        playlistListView.getSelectionModel().clearSelection();
-        trackTable.setItems(libreria.getAllTracks());
-        currentPlaylistLabel.setText("Tracce disponibili");
+        playlistAttuale = null; // Resettiamo la selezione
+        playlistListView.getSelectionModel().clearSelection(); // Deselezioniamo a sinistra
+        trackTable.setItems(libreria.getAllTracks()); // Mostriamo tutto il magazzino
+        currentPlaylistLabel.setText("Gestione Tracce: Tutte le canzoni");
     }
 
+    // --- CREA PLAYLIST ---
     @FXML
     public void onAddPlaylistClick() {
         try {
-            Playlist nuovaPlaylist = playlistService.createPlaylist(
-                    newPlaylistInput.getText(),
-                    libreria
-            );
+            // Deleghiamo al Service la creazione e il controllo dei duplicati
+            Playlist nuovaPlaylist = playlistService.createPlaylist(newPlaylistInput.getText(), libreria);
 
+            // ORA USIAMO IL NUOVO SERVICE DELLA LIBRERIA
             libraryService.addPlaylist(libreria, nuovaPlaylist);
 
             newPlaylistInput.clear();
             playlistListView.getSelectionModel().select(nuovaPlaylist);
 
         } catch (PlaylistValidationException e) {
+            // Se c'è un errore (nome vuoto o duplicato), mostriamo il pop-up
             AlertUtil.showError(e.getHeader(), e.getMessage());
         }
     }
 
+    // --- CREA TRACCIA ---
     @FXML
     public void onAddTrackClick() {
         try {
             Track nuovaTraccia = trackService.createTrack(
-                    titleInput.getText(),
-                    authorInput.getText(),
-                    lengthInput.getText(),
-                    genreInput.getText(),
-                    yearInput.getText()
+                    titleInput.getText(), authorInput.getText(),
+                    lengthInput.getText(), genreInput.getText(), yearInput.getText()
             );
 
+            // ORA USIAMO IL NUOVO SERVICE PER AGGIUNGERE LA TRACCIA AL MAGAZZINO
             libraryService.addTrackToLibrary(libreria, nuovaTraccia);
 
+            // Se l'utente in questo momento sta visualizzando una specifica playlist,
+            // la aggiungiamo automaticamente anche a quella!
             if (playlistAttuale != null) {
-                playlistService.addTrackToPlaylist(playlistAttuale, nuovaTraccia);
+                playlistAttuale.addTrack(nuovaTraccia);
             }
 
-            pulisciCampiTraccia();
+            titleInput.clear(); authorInput.clear(); lengthInput.clear();
+            genreInput.clear(); yearInput.clear();
 
         } catch (TrackValidationException e) {
             AlertUtil.showError(e.getHeader(), e.getMessage());
         }
     }
 
+    // --- ASSEGNA A PLAYLIST DA MENU A TENDINA ---
     @FXML
     public void onAssignToPlaylistClick() {
         Track tracciaSelezionata = trackTable.getSelectionModel().getSelectedItem();
         Playlist playlistScelta = playlistComboBox.getValue();
 
         if (tracciaSelezionata == null) {
-            AlertUtil.showError(
-                    "Nessuna traccia selezionata",
-                    "Seleziona prima una traccia dalla tabella."
-            );
+            AlertUtil.showError("Nessuna Traccia", "Seleziona prima una traccia dalla tabella.");
             return;
         }
-
         if (playlistScelta == null) {
-            AlertUtil.showError(
-                    "Nessuna playlist selezionata",
-                    "Seleziona una playlist dal menu a tendina."
-            );
+            AlertUtil.showError("Nessuna Playlist", "Seleziona una playlist dal menu a tendina.");
             return;
         }
 
-        if (playlistService.containsTrack(playlistScelta, tracciaSelezionata)) {
-            AlertUtil.showError(
-                    "Già presente",
-                    "Questa traccia è già presente in questa playlist."
-            );
-            return;
+        // Se la traccia non è già nella playlist, la aggiungiamo
+        if (!playlistScelta.getTracks().contains(tracciaSelezionata)) {
+            playlistScelta.addTrack(tracciaSelezionata);
+
+            // Un piccolo feedback visivo per confermare
+            javafx.scene.control.Alert info = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
+            info.setTitle("Fatto!");
+            info.setHeaderText(null);
+            info.setContentText("Traccia aggiunta a " + playlistScelta.getName());
+            info.showAndWait();
+        } else {
+            AlertUtil.showError("Già presente", "Questa traccia è già presente in questa playlist.");
         }
-
-        playlistService.addTrackToPlaylist(playlistScelta, tracciaSelezionata);
-
-        AlertUtil.showInfo(
-                "Fatto!",
-                "Traccia aggiunta a " + playlistScelta.getName()
-        );
     }
 
+    // --- ELIMINA PLAYLIST ---
     @FXML
     public void onDeletePlaylistClick() {
+        // 1. Capiamo quale playlist ha selezionato l'utente a sinistra
         Playlist playlistSelezionata = playlistListView.getSelectionModel().getSelectedItem();
 
         if (playlistSelezionata == null) {
-            AlertUtil.showError(
-                    "Nessuna selezione",
-                    "Seleziona la playlist che vuoi eliminare dalla barra laterale."
-            );
+            AlertUtil.showError("Nessuna selezione", "Seleziona la playlist che vuoi eliminare dalla barra laterale.");
             return;
         }
 
+        // 2. Usiamo il Service per eliminarla dal magazzino
         libraryService.deletePlaylist(libreria, playlistSelezionata);
 
+        // 3. CASO LIMITE: Stavamo guardando proprio la playlist eliminata?
         if (playlistAttuale == playlistSelezionata) {
+            // Allora torniamo alla schermata "Tutte le tracce" per evitare di restare in una schermata "fantasma"
             onViewAllTracksClick();
         }
     }
-
+    // --- ELIMINA TRACCIA ---
     @FXML
     public void onDeleteTrackClick() {
         Track tracciaSelezionata = trackTable.getSelectionModel().getSelectedItem();
 
         if (tracciaSelezionata == null) {
-            AlertUtil.showError(
-                    "Nessuna selezione",
-                    "Clicca su una traccia prima di eliminarla."
-            );
+            AlertUtil.showError("Nessuna selezione", "Clicca su una traccia prima di eliminarla.");
             return;
         }
 
         if (playlistAttuale == null) {
+            // SOGLIA DI ATTENZIONE ALTA: Siamo nella "Gestione Tutte le tracce".
+            // ORA DELEGHIAMO L'ELIMINAZIONE GLOBALE (A CASCATA) AL SERVICE!
             libraryService.deleteTrackGlobal(libreria, tracciaSelezionata);
 
-            AlertUtil.showInfo(
-                    "Traccia eliminata",
-                    "La traccia è stata rimossa dalla libreria e da tutte le playlist."
-            );
-
-            mostraTutteLeTracce();
         } else {
-            boolean rimossa = playlistService.removeTrackFromPlaylist(
-                    playlistAttuale,
-                    tracciaSelezionata
-            );
-
-            if (rimossa) {
-                AlertUtil.showInfo(
-                        "Traccia rimossa",
-                        "La traccia è stata rimossa dalla playlist " + playlistAttuale.getName() + "."
-                );
-
-                aggiornaVistaPlaylistAttuale();
-            } else {
-                AlertUtil.showError(
-                        "Traccia non trovata",
-                        "La traccia selezionata non è presente nella playlist corrente."
-                );
-            }
+            // Rimuoviamo la canzone SOLO dalla playlist che stiamo guardando
+            playlistAttuale.removeTrack(tracciaSelezionata);
         }
-    }
-
-    @FXML
-    public void onRemoveTrackFromPlaylistClick() {
-        if (playlistAttuale == null) {
-            AlertUtil.showError(
-                    "Nessuna playlist selezionata",
-                    "Per rimuovere una traccia devi prima selezionare una playlist dalla barra laterale."
-            );
-            return;
-        }
-
-        Track tracciaSelezionata = trackTable.getSelectionModel().getSelectedItem();
-
-        if (tracciaSelezionata == null) {
-            AlertUtil.showError(
-                    "Nessuna traccia selezionata",
-                    "Per favore, seleziona una traccia dalla playlist prima di cliccare su Rimuovi da Playlist."
-            );
-            return;
-        }
-
-        boolean rimossa = playlistService.removeTrackFromPlaylist(
-                playlistAttuale,
-                tracciaSelezionata
-        );
-
-        if (rimossa) {
-            AlertUtil.showInfo(
-                    "Traccia rimossa",
-                    "La traccia è stata rimossa dalla playlist " + playlistAttuale.getName() + "."
-            );
-
-            aggiornaVistaPlaylistAttuale();
-        } else {
-            AlertUtil.showError(
-                    "Traccia non trovata",
-                    "La traccia selezionata non è presente nella playlist corrente."
-            );
-        }
-    }
-
-    private void aggiornaVistaPlaylistAttuale() {
-        if (playlistAttuale != null) {
-            trackTable.setItems(FXCollections.observableArrayList(playlistAttuale.getTracks()));
-        }
-    }
-
-    private void mostraTutteLeTracce() {
-        trackTable.setItems(libreria.getAllTracks());
-        currentPlaylistLabel.setText("Tracce disponibili");
-    }
-
-    private void mostraPlaylist(Playlist playlist) {
-        playlistAttuale = playlist;
-        currentPlaylistLabel.setText("Stai ascoltando Playlist: " + playlistAttuale.getName());
-        trackTable.setItems(FXCollections.observableArrayList(playlistAttuale.getTracks()));
-    }
-
-    private void pulisciCampiTraccia() {
-        titleInput.clear();
-        authorInput.clear();
-        lengthInput.clear();
-        genreInput.clear();
-        yearInput.clear();
     }
 }
