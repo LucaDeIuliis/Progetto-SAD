@@ -1,11 +1,10 @@
-package org.example.service;
+package org.example.mediamusicplayer.service;
 
 
 import org.example.mediamusicplayer.exception.PlaylistValidationException;
 import org.example.mediamusicplayer.model.MusicLibrary;
 import org.example.mediamusicplayer.model.Playlist;
-import org.example.mediamusicplayer.service.PlaylistService;
-import org.example.mediamusicplayer.service.MusicLibraryService;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

@@ -1,8 +1,6 @@
-package org.example.model;
+package org.example.mediamusicplayer.model;
 
-import org.example.mediamusicplayer.model.MusicLibrary;
-import org.example.mediamusicplayer.model.Playlist;
-import org.example.mediamusicplayer.model.Track;
+
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;

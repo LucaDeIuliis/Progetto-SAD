@@ -1,9 +1,8 @@
-package org.example.model;
+package org.example.mediamusicplayer.model;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.example.mediamusicplayer.model.Track;
-import org.example.mediamusicplayer.model.Playlist;
+
 import java.time.Duration;
 import java.time.Year;
 

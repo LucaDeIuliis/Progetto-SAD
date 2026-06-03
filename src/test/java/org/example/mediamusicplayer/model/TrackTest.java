@@ -1,5 +1,6 @@
-package org.example.model;
-import org.example.mediamusicplayer.model.Track;
+package org.example.mediamusicplayer.model;
+
+
 import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.time.Year;

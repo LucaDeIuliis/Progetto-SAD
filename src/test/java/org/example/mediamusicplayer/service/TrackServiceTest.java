@@ -1,8 +1,8 @@
-package org.example.service;
+package org.example.mediamusicplayer.service;
 
 import org.example.mediamusicplayer.exception.TrackValidationException;
 import org.example.mediamusicplayer.model.Track;
-import org.example.mediamusicplayer.service.TrackService;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
