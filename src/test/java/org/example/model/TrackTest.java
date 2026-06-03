@@ -1,4 +1,4 @@
-package org.example;
+package org.example.model;
 import org.example.mediamusicplayer.model.Track;
 import org.junit.jupiter.api.Test;
 import java.time.Duration;

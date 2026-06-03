@@ -1,4 +1,4 @@
-package org.example;
+package org.example.service;
 
 import org.example.mediamusicplayer.exception.TrackValidationException;
 import org.example.mediamusicplayer.model.Track;
