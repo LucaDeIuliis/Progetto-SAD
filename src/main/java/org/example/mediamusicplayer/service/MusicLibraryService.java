@@ -5,6 +5,7 @@ import org.example.mediamusicplayer.exception.TrackValidationException;
 import org.example.mediamusicplayer.model.MusicLibrary;
 import org.example.mediamusicplayer.model.Playlist;
 import org.example.mediamusicplayer.model.Track;
+import java.util.List;
 
 public class MusicLibraryService {
 
@@ -41,13 +42,17 @@ public class MusicLibraryService {
         }
     }
     // Rimuove in modo sicuro una traccia sia dal magazzino che da tutte le playlist
-    public void deleteTrackGlobal(MusicLibrary libreria, Track track) {
-        if (track != null) {
-            libreria.getAllTracks().remove(track);
-            // Eliminazione a cascata
-            for (Playlist p : libreria.getPlaylists()) {
-                p.removeTrack(track);
-            }
+    public void deleteTrackGlobal(MusicLibrary library, Track track) {
+        if (library == null || track == null) {
+            return;
+        }
+
+        library.getAllTracks().remove(track);
+
+        for (Playlist playlist : library.getPlaylists()) {
+            List<Track> tracks = playlist.getTracks();
+            tracks.remove(track);
+            playlist.setTracks(tracks);
         }
     }
 }
