@@ -214,9 +214,84 @@ public class MusicPlayerController {
 
         if (playlistAttuale == null) {
             libraryService.deleteTrackGlobal(libreria, tracciaSelezionata);
+
+            AlertUtil.showInfo(
+                    "Traccia eliminata",
+                    "La traccia è stata rimossa dalla libreria e da tutte le playlist."
+            );
+
+            mostraTutteLeTracce();
         } else {
-            playlistService.removeTrackFromPlaylist(playlistAttuale, tracciaSelezionata);
+            boolean rimossa = playlistService.removeTrackFromPlaylist(
+                    playlistAttuale,
+                    tracciaSelezionata
+            );
+
+            if (rimossa) {
+                AlertUtil.showInfo(
+                        "Traccia rimossa",
+                        "La traccia è stata rimossa dalla playlist " + playlistAttuale.getName() + "."
+                );
+
+                aggiornaVistaPlaylistAttuale();
+            } else {
+                AlertUtil.showError(
+                        "Traccia non trovata",
+                        "La traccia selezionata non è presente nella playlist corrente."
+                );
+            }
         }
+    }
+
+    @FXML
+    public void onRemoveTrackFromPlaylistClick() {
+        if (playlistAttuale == null) {
+            AlertUtil.showError(
+                    "Nessuna playlist selezionata",
+                    "Per rimuovere una traccia devi prima selezionare una playlist dalla barra laterale."
+            );
+            return;
+        }
+
+        Track tracciaSelezionata = trackTable.getSelectionModel().getSelectedItem();
+
+        if (tracciaSelezionata == null) {
+            AlertUtil.showError(
+                    "Nessuna traccia selezionata",
+                    "Per favore, seleziona una traccia dalla playlist prima di cliccare su Rimuovi da Playlist."
+            );
+            return;
+        }
+
+        boolean rimossa = playlistService.removeTrackFromPlaylist(
+                playlistAttuale,
+                tracciaSelezionata
+        );
+
+        if (rimossa) {
+            AlertUtil.showInfo(
+                    "Traccia rimossa",
+                    "La traccia è stata rimossa dalla playlist " + playlistAttuale.getName() + "."
+            );
+
+            aggiornaVistaPlaylistAttuale();
+        } else {
+            AlertUtil.showError(
+                    "Traccia non trovata",
+                    "La traccia selezionata non è presente nella playlist corrente."
+            );
+        }
+    }
+
+    private void aggiornaVistaPlaylistAttuale() {
+        if (playlistAttuale != null) {
+            trackTable.setItems(FXCollections.observableArrayList(playlistAttuale.getTracks()));
+        }
+    }
+
+    private void mostraTutteLeTracce() {
+        trackTable.setItems(libreria.getAllTracks());
+        currentPlaylistLabel.setText("Tracce disponibili");
     }
 
     private void mostraPlaylist(Playlist playlist) {
