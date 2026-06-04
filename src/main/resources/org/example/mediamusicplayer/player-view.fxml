@@ -30,9 +30,7 @@
                 <TextField fx:id="newPlaylistInput" promptText="Nome nuova playlist..." />
 
                 <Button text="Crea Playlist" onAction="#onAddPlaylistClick" maxWidth="Infinity" style="-fx-background-color: #2196F3; -fx-text-fill: white;" />
-
                 <Button text="Rinomina Playlist" onAction="#onRenamePlaylistClick" maxWidth="Infinity" style="-fx-background-color: #FFC107; -fx-text-fill: black;" />
-
                 <Button text="Elimina Playlist" onAction="#onDeletePlaylistClick" maxWidth="Infinity" style="-fx-background-color: #f44336; -fx-text-fill: white;" />
             </VBox>
         </VBox>
@@ -66,8 +64,9 @@
                 <TextField fx:id="genreInput" promptText="Genere" prefWidth="100.0" />
                 <TextField fx:id="yearInput" promptText="Anno" prefWidth="70.0" />
 
-                <Button text="Crea Traccia" onAction="#onAddTrackClick" style="-fx-background-color: #4CAF50; -fx-text-fill: white;" />
-                <Button text="Elimina Traccia" onAction="#onDeleteTrackClick" style="-fx-background-color: #f44336; -fx-text-fill: white;" />
+                <Button text="Crea" onAction="#onAddTrackClick" style="-fx-background-color: #4CAF50; -fx-text-fill: white;" />
+                <Button text="Modifica" onAction="#onUpdateTrackClick" style="-fx-background-color: #2196F3; -fx-text-fill: white;" />
+                <Button text="Elimina" onAction="#onDeleteTrackClick" style="-fx-background-color: #f44336; -fx-text-fill: white;" />
             </HBox>
 
             <HBox alignment="CENTER" spacing="10.0" style="-fx-padding: 10 0 0 0; -fx-border-color: #cccccc; -fx-border-width: 1 0 0 0;">
