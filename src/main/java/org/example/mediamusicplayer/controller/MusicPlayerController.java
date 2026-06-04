@@ -7,6 +7,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog; // <-- IMPORTATO PER IL POP-UP
 import javafx.scene.control.cell.PropertyValueFactory;
 
 import org.example.mediamusicplayer.model.MusicLibrary;
@@ -14,12 +15,13 @@ import org.example.mediamusicplayer.model.Playlist;
 import org.example.mediamusicplayer.model.Track;
 import org.example.mediamusicplayer.service.TrackService;
 import org.example.mediamusicplayer.service.PlaylistService;
-import org.example.mediamusicplayer.service.MusicLibraryService; // <-- IMPORTATO
+import org.example.mediamusicplayer.service.MusicLibraryService;
 import org.example.mediamusicplayer.util.AlertUtil;
 import org.example.mediamusicplayer.exception.TrackValidationException;
 import org.example.mediamusicplayer.exception.PlaylistValidationException;
 
 import java.time.Year;
+import java.util.Optional; // <-- IMPORTATO PER IL RISULTATO DEL POP-UP
 
 public class MusicPlayerController {
 
@@ -49,14 +51,14 @@ public class MusicPlayerController {
     // I nostri Service per la logica pura
     private TrackService trackService;
     private PlaylistService playlistService;
-    private MusicLibraryService libraryService; // <-- AGGIUNTO
+    private MusicLibraryService libraryService;
 
     @FXML
     public void initialize() {
         // Inizializziamo i Service e la libreria
         trackService = new TrackService();
         playlistService = new PlaylistService();
-        libraryService = new MusicLibraryService(); // <-- INIZIALIZZATO
+        libraryService = new MusicLibraryService();
         libreria = new MusicLibrary();
 
         titleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
@@ -108,6 +110,48 @@ public class MusicPlayerController {
             // Se c'è un errore (nome vuoto o duplicato), mostriamo il pop-up
             AlertUtil.showError(e.getHeader(), e.getMessage());
         }
+    }
+
+    // --- RINOMINA PLAYLIST ---
+    @FXML
+    public void onRenamePlaylistClick() {
+        Playlist playlistSelezionata = playlistListView.getSelectionModel().getSelectedItem();
+
+        if (playlistSelezionata == null) {
+            AlertUtil.showError("Nessuna selezione", "Seleziona la playlist che vuoi rinominare dalla barra laterale.");
+            return;
+        }
+
+        // Creiamo una finestra di dialogo per chiedere il nuovo nome
+        TextInputDialog dialog = new TextInputDialog(playlistSelezionata.getName());
+        dialog.setTitle("Rinomina Playlist");
+        dialog.setHeaderText("Stai modificando: " + playlistSelezionata.getName());
+        dialog.setContentText("Inserisci il nuovo nome:");
+
+        // Mostriamo la finestra e aspettiamo la risposta dell'utente
+        Optional<String> result = dialog.showAndWait();
+
+        // Se l'utente ha premuto "OK" e ha inserito un testo
+        result.ifPresent(nuovoNome -> {
+            try {
+                // Deleghiamo la logica e i controlli al Service
+                playlistService.renamePlaylist(playlistSelezionata, nuovoNome, libreria);
+
+                // FORZIAMO L'AGGIORNAMENTO GRAFICO DELLA LISTA E DEL COMBOBOX
+                playlistListView.refresh();
+                playlistComboBox.setItems(null);
+                playlistComboBox.setItems(libreria.getPlaylists());
+
+                // Se stavamo guardando proprio questa playlist, aggiorniamo il titolo centrale
+                if (playlistAttuale == playlistSelezionata) {
+                    currentPlaylistLabel.setText("Stai ascoltando Playlist: " + playlistSelezionata.getName());
+                }
+
+            } catch (PlaylistValidationException e) {
+                // Se ha inserito un nome vuoto o duplicato, scatta il Service
+                AlertUtil.showError(e.getHeader(), e.getMessage());
+            }
+        });
     }
 
     // --- CREA TRACCIA ---
@@ -186,6 +230,7 @@ public class MusicPlayerController {
             onViewAllTracksClick();
         }
     }
+
     // --- ELIMINA TRACCIA ---
     @FXML
     public void onDeleteTrackClick() {
