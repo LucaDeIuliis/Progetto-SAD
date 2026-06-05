@@ -85,9 +85,34 @@ public class MusicPlayerController {
             }
         });
 
+        // === LOGICA AUTOPLAY QUANDO FINISCE LA TRACCIA ===
         audioPlayerService.setOnTrackFinished(() -> {
-            playPauseButton.setText("▶ PLAY");
-            playPauseButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
+            Track tracciaFinita = audioPlayerService.getCurrentTrack();
+
+            // Cerchiamo l'indice della traccia che è appena terminata
+            int indiceAttuale = trackTable.getItems().indexOf(tracciaFinita);
+
+            // Controlliamo se la traccia esiste e SE NON è l'ultima della lista
+            if (indiceAttuale != -1 && indiceAttuale < trackTable.getItems().size() - 1) {
+
+                int prossimoIndice = indiceAttuale + 1;
+                Track prossimaTraccia = trackTable.getItems().get(prossimoIndice);
+
+                // Selezioniamo graficamente la riga successiva (questo aggiornerà anche i campi input)
+                trackTable.getSelectionModel().select(prossimoIndice);
+
+                // Facciamo partire la nuova canzone
+                audioPlayerService.playTrack(prossimaTraccia);
+
+                // Manteniamo il bottone nello stato "PAUSA" (colore giallo)
+                playPauseButton.setText("⏸ PAUSA");
+                playPauseButton.setStyle("-fx-background-color: #FFC107; -fx-text-fill: black; -fx-font-weight: bold; -fx-font-size: 14px;");
+
+            } else {
+                // Se eravamo all'ultima traccia, la riproduzione si ferma
+                playPauseButton.setText("▶ PLAY");
+                playPauseButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
+            }
         });
 
         // ASCOLTATORE CAMBIO PLAYLIST
@@ -97,7 +122,7 @@ public class MusicPlayerController {
                 currentPlaylistLabel.setText("Stai ascoltando Playlist: " + playlistAttuale.getName());
                 trackTable.setItems(playlistAttuale.getTracks());
 
-                // === NUOVO: Svuotiamo i campi quando cambiamo playlist! ===
+                // Svuotiamo i campi quando cambiamo playlist!
                 clearTrackInputs();
             }
         });
@@ -126,7 +151,7 @@ public class MusicPlayerController {
         });
     }
 
-    // === NUOVO METODO DI UTILITA' PER PULIRE IL CODICE E I CAMPI ===
+    // === METODO DI UTILITA' PER PULIRE IL CODICE E I CAMPI ===
     private void clearTrackInputs() {
         titleInput.clear();
         authorInput.clear();
@@ -193,7 +218,7 @@ public class MusicPlayerController {
         trackTable.setItems(libreria.getAllTracks());
         currentPlaylistLabel.setText("Gestione Tracce: Tutte le canzoni");
 
-        // === NUOVO: Svuotiamo i campi quando torniamo a Tutte le Tracce! ===
+        // Svuotiamo i campi quando torniamo a Tutte le Tracce!
         clearTrackInputs();
     }
 
