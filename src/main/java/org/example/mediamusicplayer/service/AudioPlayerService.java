@@ -3,49 +3,142 @@ package org.example.mediamusicplayer.service;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
-import javafx.util.Duration; // Nota: Questo è il Duration di JavaFX, non di java.time
+import javafx.util.Duration;
+import org.example.mediamusicplayer.service.playback.PlaybackMode;
+import org.example.mediamusicplayer.service.playback.PlaybackStrategyFactory;
 import org.example.mediamusicplayer.model.Track;
+import org.example.mediamusicplayer.service.playback.PlaybackStrategy;
+import org.example.mediamusicplayer.service.playback.SequentialPlaybackStrategy;
+
+import java.util.List;
 
 public class AudioPlayerService {
 
     private Track tracciaAttuale;
+    private List<Track> playlistCorrente;
     private int secondiTrascorsi = 0;
     private Timeline timeline;
+
+    private PlaybackStrategy playbackStrategy;
 
     // Callbacks per comunicare con il Controller e aggiornare l'interfaccia
     private Runnable onTimeUpdate;
     private Runnable onTrackFinished;
+    private Runnable onTrackChanged;
 
-    public void setOnTimeUpdate(Runnable onTimeUpdate) { this.onTimeUpdate = onTimeUpdate; }
-    public void setOnTrackFinished(Runnable onTrackFinished) { this.onTrackFinished = onTrackFinished; }
+    public AudioPlayerService() {
+        this.playbackStrategy = new SequentialPlaybackStrategy();
+    }
 
-    public Track getCurrentTrack() { return tracciaAttuale; }
+    public void setOnTimeUpdate(Runnable onTimeUpdate) {
+        this.onTimeUpdate = onTimeUpdate;
+    }
+
+    public void setOnTrackFinished(Runnable onTrackFinished) {
+        this.onTrackFinished = onTrackFinished;
+    }
+
+    public void setOnTrackChanged(Runnable onTrackChanged) {
+        this.onTrackChanged = onTrackChanged;
+    }
+
+    public void setPlaybackStrategy(PlaybackStrategy playbackStrategy) {
+        if (playbackStrategy != null) {
+            this.playbackStrategy = playbackStrategy;
+        }
+    }
+
+    public void setPlaybackMode(PlaybackMode mode) {
+        this.playbackStrategy = PlaybackStrategyFactory.create(mode);
+    }
+
+    public Track getCurrentTrack() {
+        return tracciaAttuale;
+    }
 
     public void playTrack(Track track) {
-        stop(); // Resetta se c'era un'altra canzone
+        playTrack(track, null);
+    }
+
+    // Questo serve perché lo Strategy Pattern deve conoscere la lista da cui scegliere la prossima traccia.
+
+    public void playTrack(Track track, List<Track> tracks) {
+        stop();
+
         this.tracciaAttuale = track;
+        this.playlistCorrente = tracks;
         this.secondiTrascorsi = 0;
 
-        long durataTotale = track.getLength().getSeconds();
+        startTimelineForCurrentTrack();
 
-        // Creiamo un timer che scatta ogni 1 secondo
+        if (onTrackChanged != null) {
+            onTrackChanged.run();
+        }
+
+        if (onTimeUpdate != null) {
+            onTimeUpdate.run();
+        }
+    }
+
+    private void startTimelineForCurrentTrack() {
+        if (tracciaAttuale == null) {
+            return;
+        }
+
+        long durataTotale = tracciaAttuale.getLength().getSeconds();
+
         timeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
             secondiTrascorsi++;
 
-            // Aggiorna l'interfaccia grafica
-            if (onTimeUpdate != null) onTimeUpdate.run();
+            if (onTimeUpdate != null) {
+                onTimeUpdate.run();
+            }
 
-            // Se la canzone è finita
             if (secondiTrascorsi >= durataTotale) {
-                stop();
-                if (onTrackFinished != null) onTrackFinished.run();
+                playNextTrack();
             }
         }));
 
         timeline.setCycleCount(Animation.INDEFINITE);
         timeline.play();
+    }
 
-        if (onTimeUpdate != null) onTimeUpdate.run();
+    public void playNextTrack() {
+        stopTimelineOnly();
+
+        Track prossimaTraccia = null;
+
+        if (playbackStrategy != null && playlistCorrente != null) {
+            prossimaTraccia = playbackStrategy.getNextTrack(playlistCorrente, tracciaAttuale);
+        }
+
+        if (prossimaTraccia == null) {
+            tracciaAttuale = null;
+            secondiTrascorsi = 0;
+
+            if (onTimeUpdate != null) {
+                onTimeUpdate.run();
+            }
+
+            if (onTrackFinished != null) {
+                onTrackFinished.run();
+            }
+
+            return;
+        }
+
+        tracciaAttuale = prossimaTraccia;
+        secondiTrascorsi = 0;
+
+        startTimelineForCurrentTrack();
+
+        if (onTrackChanged != null) {
+            onTrackChanged.run();
+        }
+
+        if (onTimeUpdate != null) {
+            onTimeUpdate.run();
+        }
     }
 
     public void pause() {
@@ -61,11 +154,18 @@ public class AudioPlayerService {
     }
 
     public void stop() {
+        stopTimelineOnly();
+        secondiTrascorsi = 0;
+
+        if (onTimeUpdate != null) {
+            onTimeUpdate.run();
+        }
+    }
+
+    private void stopTimelineOnly() {
         if (timeline != null) {
             timeline.stop();
         }
-        secondiTrascorsi = 0;
-        if (onTimeUpdate != null) onTimeUpdate.run();
     }
 
     public boolean isPlaying() {
@@ -76,7 +176,6 @@ public class AudioPlayerService {
         return timeline != null && timeline.getStatus() == Animation.Status.PAUSED;
     }
 
-    // Calcola la stringa del tempo attuale (es. "1:05")
     public String getFormattedCurrentTime() {
         return String.format("%d:%02d", secondiTrascorsi / 60, secondiTrascorsi % 60);
     }

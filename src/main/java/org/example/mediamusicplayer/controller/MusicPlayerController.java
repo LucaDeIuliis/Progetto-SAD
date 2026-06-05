@@ -8,9 +8,8 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
-import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.cell.PropertyValueFactory;
-
+import java.util.ArrayList;
 import org.example.mediamusicplayer.model.MusicLibrary;
 import org.example.mediamusicplayer.model.Playlist;
 import org.example.mediamusicplayer.model.Track;
@@ -21,7 +20,7 @@ import org.example.mediamusicplayer.service.MusicLibraryService;
 import org.example.mediamusicplayer.util.AlertUtil;
 import org.example.mediamusicplayer.exception.TrackValidationException;
 import org.example.mediamusicplayer.exception.PlaylistValidationException;
-
+import org.example.mediamusicplayer.service.playback.PlaybackMode;
 import java.time.Year;
 import java.util.Optional;
 
@@ -34,7 +33,7 @@ public class MusicPlayerController {
 
     @FXML private Button playPauseButton;
     @FXML private Label timeLabel;
-
+    @FXML private ComboBox<PlaybackMode> playbackModeComboBox;
     @FXML private TableView<Track> trackTable;
     @FXML private TableColumn<Track, String> titleColumn;
     @FXML private TableColumn<Track, String> authorColumn;
@@ -63,6 +62,17 @@ public class MusicPlayerController {
         libraryService = new MusicLibraryService();
         audioPlayerService = new AudioPlayerService();
         libreria = new MusicLibrary();
+
+        playbackModeComboBox.getItems().setAll(PlaybackMode.values());
+        playbackModeComboBox.setValue(PlaybackMode.SEQUENTIAL);
+
+        audioPlayerService.setPlaybackMode(PlaybackMode.SEQUENTIAL);
+
+        playbackModeComboBox.valueProperty().addListener((obs, oldMode, newMode) -> {
+            if (newMode != null) {
+                audioPlayerService.setPlaybackMode(newMode);
+            }
+        });
 
         titleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
         authorColumn.setCellValueFactory(new PropertyValueFactory<>("author"));
@@ -115,6 +125,19 @@ public class MusicPlayerController {
             }
         });
 
+        // Questa callback serve quando una traccia finisce e AudioPlayerService
+        // passa automaticamente alla successiva tramite Strategy
+        audioPlayerService.setOnTrackChanged(() -> {
+            Track currentTrack = audioPlayerService.getCurrentTrack();
+
+            if (currentTrack != null) {
+                trackTable.getSelectionModel().select(currentTrack);
+                trackTable.scrollTo(currentTrack);
+                playPauseButton.setText("⏸ PAUSA");
+                playPauseButton.setStyle("-fx-background-color: #FFC107; -fx-text-fill: black; -fx-font-weight: bold; -fx-font-size: 14px;");
+            }
+        });
+
         // ASCOLTATORE CAMBIO PLAYLIST
         playlistListView.getSelectionModel().selectedItemProperty().addListener((obs, vecchia, nuova) -> {
             if (nuova != null) {
@@ -137,7 +160,7 @@ public class MusicPlayerController {
                 lengthInput.setText(String.format("%d:%02d", totalSeconds / 60, totalSeconds % 60));
 
                 if (audioPlayerService.isPlaying()) {
-                    audioPlayerService.playTrack(nuova);
+                    audioPlayerService.playTrack(nuova, getCurrentTrackList());
                     playPauseButton.setText("⏸ PAUSA");
                     playPauseButton.setStyle("-fx-background-color: #FFC107; -fx-text-fill: black; -fx-font-weight: bold; -fx-font-size: 14px;");
                 } else {
@@ -161,6 +184,11 @@ public class MusicPlayerController {
         trackTable.getSelectionModel().clearSelection();
     }
 
+    // Questo metodo restituisce la lista delle tracce attualmente visibili nella tabella
+    private java.util.List<Track> getCurrentTrackList() {
+        return new ArrayList<>(trackTable.getItems());
+    }
+
     @FXML
     public void onPlayPauseClick() {
         Track tracciaSelezionata = trackTable.getSelectionModel().getSelectedItem();
@@ -171,7 +199,7 @@ public class MusicPlayerController {
         }
 
         if (!tracciaSelezionata.equals(audioPlayerService.getCurrentTrack())) {
-            audioPlayerService.playTrack(tracciaSelezionata);
+            audioPlayerService.playTrack(tracciaSelezionata, getCurrentTrackList());
             playPauseButton.setText("⏸ PAUSA");
             playPauseButton.setStyle("-fx-background-color: #FFC107; -fx-text-fill: black; -fx-font-weight: bold; -fx-font-size: 14px;");
             return;
@@ -186,7 +214,7 @@ public class MusicPlayerController {
             playPauseButton.setText("⏸ PAUSA");
             playPauseButton.setStyle("-fx-background-color: #FFC107; -fx-text-fill: black; -fx-font-weight: bold; -fx-font-size: 14px;");
         } else {
-            audioPlayerService.playTrack(tracciaSelezionata);
+            audioPlayerService.playTrack(tracciaSelezionata, getCurrentTrackList());
             playPauseButton.setText("⏸ PAUSA");
             playPauseButton.setStyle("-fx-background-color: #FFC107; -fx-text-fill: black; -fx-font-weight: bold; -fx-font-size: 14px;");
         }
@@ -274,7 +302,10 @@ public class MusicPlayerController {
             );
 
             libraryService.addTrackToLibrary(libreria, nuovaTraccia);
-            if (playlistAttuale != null) playlistAttuale.addTrack(nuovaTraccia);
+
+            if (playlistAttuale != null) {
+                playlistService.addTrackToPlaylist(playlistAttuale, nuovaTraccia);
+            }
 
             // Usiamo il nuovo metodo pulito!
             clearTrackInputs();
@@ -322,11 +353,11 @@ public class MusicPlayerController {
             return;
         }
 
-        if (!playlistScelta.getTracks().contains(tracciaSelezionata)) {
-            playlistScelta.addTrack(tracciaSelezionata);
+        try {
+            playlistService.addTrackToPlaylist(playlistScelta, tracciaSelezionata);
             AlertUtil.showInfo("Fatto!", "Traccia aggiunta a " + playlistScelta.getName());
-        } else {
-            AlertUtil.showError("Già presente", "Traccia già presente nella playlist.");
+        } catch (PlaylistValidationException e) {
+            AlertUtil.showError(e.getHeader(), e.getMessage());
         }
     }
 
@@ -357,7 +388,7 @@ public class MusicPlayerController {
         if (playlistAttuale == null) {
             libraryService.deleteTrackGlobal(libreria, tracciaSelezionata);
         } else {
-            playlistAttuale.removeTrack(tracciaSelezionata);
+            playlistService.removeTrackFromPlaylist(playlistAttuale, tracciaSelezionata);
         }
 
         // Usiamo il nuovo metodo pulito!

@@ -48,6 +48,9 @@
                 <Button fx:id="playPauseButton" text="▶ PLAY" onAction="#onPlayPauseClick" prefWidth="120.0" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;" />
                 <Button text="⏹ STOP" onAction="#onStopClick" prefWidth="100.0" style="-fx-background-color: #F44336; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;" />
 
+                <Label text="Modalità:" style="-fx-text-fill: white; -fx-font-weight: bold;" />
+                <ComboBox fx:id="playbackModeComboBox" prefWidth="140.0" />
+
                 <Label fx:id="timeLabel" text="0:00 / 0:00" style="-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-padding: 0 0 0 15;" />
             </HBox>
 
