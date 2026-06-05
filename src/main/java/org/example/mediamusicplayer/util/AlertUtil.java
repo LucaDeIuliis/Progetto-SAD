@@ -1,19 +1,35 @@
 package org.example.mediamusicplayer.util;
 
 import javafx.scene.control.Alert;
-import javafx.scene.layout.Region;
+import javafx.scene.control.TextInputDialog;
+import java.util.Optional;
 
 public class AlertUtil {
 
-    // Metodo statico: lo chiami da ovunque senza dover fare "new AlertUtil()"
-    public static void showError(String titolo, String messaggio) {
+    // Mostra un pop-up di ERRORE (rosso)
+    public static void showError(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Errore di Inserimento");
-        alert.setHeaderText(titolo);
-        alert.setContentText(messaggio);
-
-        // Risolve il problema del testo tagliato
-        alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    // Mostra un pop-up di SUCCESSO/INFO (blu)
+    public static void showInfo(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    // Mostra un pop-up di INPUT (per chiedere testo all'utente)
+    public static Optional<String> askInput(String title, String header, String content, String defaultValue) {
+        TextInputDialog dialog = new TextInputDialog(defaultValue);
+        dialog.setTitle(title);
+        dialog.setHeaderText(header);
+        dialog.setContentText(content);
+        return dialog.showAndWait();
     }
 }
