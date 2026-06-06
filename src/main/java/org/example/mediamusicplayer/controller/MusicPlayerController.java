@@ -195,13 +195,22 @@ public class MusicPlayerController {
     @FXML
     public void onPlayPauseClick() {
         Track tracciaSelezionata = trackTable.getSelectionModel().getSelectedItem();
+        Track tracciaCorrente = audioPlayerService.getCurrentTrack();
 
-        if (tracciaSelezionata == null) {
+        // CASO 1: Tutto vuoto. Non c'è selezione e non sta suonando niente.
+        if (tracciaSelezionata == null && tracciaCorrente == null) {
             AlertUtil.showError("Nessuna traccia", "Seleziona prima una traccia dalla tabella per riprodurla.");
             return;
         }
 
-        if (!tracciaSelezionata.equals(audioPlayerService.getCurrentTrack())) {
+        // CASO 2: Bug Fix. La tabella è stata deselezionata, ma stiamo ascoltando una canzone.
+        // In questo caso, il bottone deve agire sulla canzone corrente (mettendola in pausa o riprendendola).
+        if (tracciaSelezionata == null) {
+            tracciaSelezionata = tracciaCorrente;
+        }
+
+        // CASO 3: Abbiamo cliccato su una canzone DIVERSA da quella che stavamo ascoltando
+        if (!tracciaSelezionata.equals(tracciaCorrente)) {
             audioPlayerService.playTrack(tracciaSelezionata, getCurrentTrackList());
             playPauseButton.setText("⏸ PAUSA");
             skipButton.setVisible(true);
@@ -210,6 +219,7 @@ public class MusicPlayerController {
             return;
         }
 
+        // CASO 4: La canzone è la STESSA (stiamo mettendo in pausa o riprendendo)
         if (audioPlayerService.isPlaying()) {
             audioPlayerService.pause();
             playPauseButton.setText("▶ PLAY");
