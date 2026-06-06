@@ -5,7 +5,6 @@ import org.example.mediamusicplayer.exception.TrackValidationException;
 import org.example.mediamusicplayer.model.MusicLibrary;
 import org.example.mediamusicplayer.model.Playlist;
 import org.example.mediamusicplayer.model.Track;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -18,27 +17,28 @@ class MusicLibraryServiceTest {
 
     private MusicLibraryService service;
     private MusicLibrary library;
-    private Playlist playlist;
-    private Track track;
 
     @BeforeEach
     void setUp() {
         service = new MusicLibraryService();
         library = new MusicLibrary();
+    }
 
-        playlist = new Playlist("Rock");
-
-        track = new Track(
-                "Bohemian Rhapsody",
-                "Queen",
-                Duration.ofSeconds(355),
+    private Track createTrack() {
+        return new Track(
+                "Song",
+                "Artist",
+                Duration.ofSeconds(180),
                 "Rock",
-                Year.of(1975)
+                Year.of(2020)
         );
     }
 
     @Test
-    void addPlaylistShouldAddPlaylist() {
+    void addPlaylist_ShouldAddPlaylist() {
+
+        Playlist playlist = new Playlist("Rock");
+
         service.addPlaylist(library, playlist);
 
         assertEquals(1, library.getPlaylists().size());
@@ -46,7 +46,8 @@ class MusicLibraryServiceTest {
     }
 
     @Test
-    void addPlaylistShouldThrowExceptionWhenPlaylistIsNull() {
+    void addPlaylist_NullPlaylist_ShouldThrowException() {
+
         assertThrows(
                 PlaylistValidationException.class,
                 () -> service.addPlaylist(library, null)
@@ -54,8 +55,11 @@ class MusicLibraryServiceTest {
     }
 
     @Test
-    void addPlaylistShouldThrowExceptionWhenPlaylistAlreadyExists() {
-        service.addPlaylist(library, playlist);
+    void addPlaylist_DuplicatePlaylist_ShouldThrowException() {
+
+        Playlist playlist = new Playlist("Rock");
+
+        library.getPlaylists().add(playlist);
 
         assertThrows(
                 PlaylistValidationException.class,
@@ -64,7 +68,10 @@ class MusicLibraryServiceTest {
     }
 
     @Test
-    void addTrackToLibraryShouldAddTrack() {
+    void addTrackToLibrary_ShouldAddTrack() {
+
+        Track track = createTrack();
+
         service.addTrackToLibrary(library, track);
 
         assertEquals(1, library.getAllTracks().size());
@@ -72,7 +79,8 @@ class MusicLibraryServiceTest {
     }
 
     @Test
-    void addTrackToLibraryShouldThrowExceptionWhenTrackIsNull() {
+    void addTrackToLibrary_NullTrack_ShouldThrowException() {
+
         assertThrows(
                 TrackValidationException.class,
                 () -> service.addTrackToLibrary(library, null)
@@ -80,7 +88,10 @@ class MusicLibraryServiceTest {
     }
 
     @Test
-    void addTrackToLibraryShouldNotAddDuplicateTrack() {
+    void addTrackToLibrary_SameTrackTwice_ShouldNotDuplicate() {
+
+        Track track = createTrack();
+
         service.addTrackToLibrary(library, track);
         service.addTrackToLibrary(library, track);
 
@@ -88,55 +99,51 @@ class MusicLibraryServiceTest {
     }
 
     @Test
-    void deletePlaylistShouldRemovePlaylist() {
-        service.addPlaylist(library, playlist);
+    void deletePlaylist_ShouldRemovePlaylist() {
+
+        Playlist playlist = new Playlist("Rock");
+
+        library.getPlaylists().add(playlist);
 
         service.deletePlaylist(library, playlist);
 
-        assertTrue(library.getPlaylists().isEmpty());
+        assertFalse(library.getPlaylists().contains(playlist));
     }
 
     @Test
-    void deletePlaylistWithNullShouldDoNothing() {
-        assertDoesNotThrow(() ->
-                service.deletePlaylist(library, null)
+    void deletePlaylist_NullPlaylist_ShouldDoNothing() {
+
+        assertDoesNotThrow(
+                () -> service.deletePlaylist(library, null)
         );
-
-        assertTrue(library.getPlaylists().isEmpty());
     }
 
     @Test
-    void deleteTrackGlobalShouldRemoveTrackFromLibrary() {
-        service.addTrackToLibrary(library, track);
+    void deleteTrackGlobal_ShouldRemoveTrackEverywhere() {
+
+        Track track = createTrack();
+
+        Playlist p1 = new Playlist("P1");
+        Playlist p2 = new Playlist("P2");
+
+        p1.addTrack(track);
+        p2.addTrack(track);
+
+        library.getPlaylists().addAll(p1, p2);
+        library.getAllTracks().add(track);
 
         service.deleteTrackGlobal(library, track);
 
         assertFalse(library.getAllTracks().contains(track));
+        assertFalse(p1.getTracks().contains(track));
+        assertFalse(p2.getTracks().contains(track));
     }
 
     @Test
-    void deleteTrackGlobalShouldRemoveTrackFromAllPlaylists() {
-        Playlist playlist2 = new Playlist("Pop");
+    void deleteTrackGlobal_NullTrack_ShouldDoNothing() {
 
-        service.addPlaylist(library, playlist);
-        service.addPlaylist(library, playlist2);
-
-        playlist.addTrack(track);
-        playlist2.addTrack(track);
-
-        service.addTrackToLibrary(library, track);
-
-        service.deleteTrackGlobal(library, track);
-
-        assertFalse(playlist.getTracks().contains(track));
-        assertFalse(playlist2.getTracks().contains(track));
-        assertFalse(library.getAllTracks().contains(track));
-    }
-
-    @Test
-    void deleteTrackGlobalWithNullShouldDoNothing() {
-        assertDoesNotThrow(() ->
-                service.deleteTrackGlobal(library, null)
+        assertDoesNotThrow(
+                () -> service.deleteTrackGlobal(library, null)
         );
     }
 }

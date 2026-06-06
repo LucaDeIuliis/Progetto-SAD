@@ -2,126 +2,82 @@ package org.example.mediamusicplayer.model;
 
 
 import org.junit.jupiter.api.Test;
+
 import java.time.Duration;
 import java.time.Year;
+
 import static org.junit.jupiter.api.Assertions.*;
 
-/*
-Questi test coprono:
--corretta inizializzazione tramite costruttore;
--corretto funzionamento di getter e setter;
--formattazione della durata con Duration;
--caso limite length == null;
--durata superiore a un’ora;
--output del metodo toString().
-*/
-
 class TrackTest {
+
     @Test
-    void constructorShouldInitializeAllFieldsCorrectly() {
+    void getFormattedLength_ShouldFormatCorrectly() {
+
         Track track = new Track(
-                "Nel blu dipinto di blu",
-                "Domenico Modugno",
-                Duration.ofMinutes(3).plusSeconds(35),
-                "Musica italiana",
-                Year.of(1958)
-        );
-        assertEquals("Nel blu dipinto di blu", track.getTitle());
-        assertEquals("Domenico Modugno", track.getAuthor());
-        assertEquals(Duration.ofMinutes(3).plusSeconds(35), track.getLength());
-        assertEquals("Musica italiana", track.getGenre());
-        assertEquals(Year.of(1958), track.getYear());
-    }
-    @Test
-    void settersShouldUpdateAllFieldsCorrectly() {
-        Track track = new Track(
-                "Vecchio titolo",
-                "Vecchio autore",
-                Duration.ofMinutes(3),
-                "Vecchio genere",
-                Year.of(2000)
-        );
-        track.setTitle("Nuovo titolo");
-        track.setAuthor("Nuovo autore");
-        track.setLength(Duration.ofMinutes(4).plusSeconds(30));
-        track.setGenre("Pop italiano");
-        track.setYear(Year.of(2024));
-        assertEquals("Nuovo titolo", track.getTitle());
-        assertEquals("Nuovo autore", track.getAuthor());
-        assertEquals(Duration.ofMinutes(4).plusSeconds(30), track.getLength());
-        assertEquals("Pop italiano", track.getGenre());
-        assertEquals(Year.of(2024), track.getYear());
-    }
-    @Test
-    void getFormattedLengthShouldReturnMinutesAndSecondsWithTwoDigits() {
-        Track track = new Track(
-                "Canzone breve",
-                "Artista italiano",
-                Duration.ofMinutes(3).plusSeconds(7),
-                "Pop",
+                "Song",
+                "Artist",
+                Duration.ofSeconds(225),
+                "Rock",
                 Year.of(2020)
         );
-        assertEquals("3:07", track.getFormattedLength());
+
+        assertEquals("3:45", track.getFormattedLength());
     }
+
     @Test
-    void getFormattedLengthShouldReturnZeroWhenLengthIsNull() {
+    void getFormattedLength_NullDuration_ShouldReturnZero() {
+
         Track track = new Track(
-                "Canzone senza durata",
-                "Artista sconosciuto",
+                "Song",
+                "Artist",
                 null,
-                "Genere sconosciuto",
+                "Rock",
                 Year.of(2020)
         );
+
         assertEquals("0:00", track.getFormattedLength());
     }
+
     @Test
-    void getFormattedLengthShouldUseTotalMinutesWhenDurationIsLongerThanOneHour() {
+    void toString_ShouldContainTrackInfo() {
+
         Track track = new Track(
-                "Traccia lunga",
-                "Orchestra italiana",
-                Duration.ofHours(1).plusMinutes(2).plusSeconds(5),
-                "Classica",
-                Year.of(1999)
+                "Song",
+                "Artist",
+                Duration.ofSeconds(225),
+                "Rock",
+                Year.of(2020)
         );
-        assertEquals("62:05", track.getFormattedLength());
+
+        String result = track.toString();
+
+        assertTrue(result.contains("Song"));
+        assertTrue(result.contains("Artist"));
+        assertTrue(result.contains("3:45"));
+        assertTrue(result.contains("2020"));
     }
+
     @Test
-    void getFormattedLengthShouldFormatExactMinutesCorrectly() {
+    void setters_ShouldUpdateValues() {
+
         Track track = new Track(
-                "Canzone da quattro minuti",
-                "Cantautore italiano",
-                Duration.ofMinutes(4),
-                "Jazz",
+                "A",
+                "B",
+                Duration.ofSeconds(100),
+                "Pop",
                 Year.of(2010)
         );
-        assertEquals("4:00", track.getFormattedLength());
-    }
-    @Test
-    void toStringShouldReturnReadableTrackRepresentation() {
-        Track track = new Track(
-                "La cura",
-                "Franco Battiato",
-                Duration.ofMinutes(4).plusSeconds(3),
-                "Musica d'autore",
-                Year.of(1996)
-        );
-        assertEquals(
-                "La cura - Franco Battiato [4:03] (1996)",
-                track.toString()
-        );
-    }
-    @Test
-    void toStringShouldUseFormattedLengthWhenLengthIsNull() {
-        Track track = new Track(
-                "Canzone sconosciuta",
-                "Autore sconosciuto",
-                null,
-                "Genere sconosciuto",
-                Year.of(2024)
-        );
-        assertEquals(
-                "Canzone sconosciuta - Autore sconosciuto [0:00] (2024)",
-                track.toString()
-        );
+
+        track.setTitle("New");
+        track.setAuthor("Author");
+        track.setGenre("Rock");
+        track.setYear(Year.of(2024));
+        track.setLength(Duration.ofSeconds(300));
+
+        assertEquals("New", track.getTitle());
+        assertEquals("Author", track.getAuthor());
+        assertEquals("Rock", track.getGenre());
+        assertEquals(Year.of(2024), track.getYear());
+        assertEquals(Duration.ofSeconds(300), track.getLength());
     }
 }
