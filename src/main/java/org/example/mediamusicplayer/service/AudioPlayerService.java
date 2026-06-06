@@ -3,7 +3,6 @@ package org.example.mediamusicplayer.service;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
-import javafx.scene.Node;
 import javafx.util.Duration;
 import org.example.mediamusicplayer.service.playback.PlaybackMode;
 import org.example.mediamusicplayer.service.playback.PlaybackStrategyFactory;
