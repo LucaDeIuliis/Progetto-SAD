@@ -32,6 +32,7 @@ public class MusicPlayerController {
     @FXML private ComboBox<Playlist> playlistComboBox;
 
     @FXML private Button playPauseButton;
+    @FXML private Button skipButton;
     @FXML private Label timeLabel;
     @FXML private ComboBox<PlaybackMode> playbackModeComboBox;
     @FXML private TableView<Track> trackTable;
@@ -119,6 +120,8 @@ public class MusicPlayerController {
                 playPauseButton.setStyle("-fx-background-color: #FFC107; -fx-text-fill: black; -fx-font-weight: bold; -fx-font-size: 14px;");
 
             } else {
+                skipButton.setVisible(false);
+                skipButton.setManaged(false);
                 // Se eravamo all'ultima traccia, la riproduzione si ferma
                 playPauseButton.setText("▶ PLAY");
                 playPauseButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
@@ -201,6 +204,8 @@ public class MusicPlayerController {
         if (!tracciaSelezionata.equals(audioPlayerService.getCurrentTrack())) {
             audioPlayerService.playTrack(tracciaSelezionata, getCurrentTrackList());
             playPauseButton.setText("⏸ PAUSA");
+            skipButton.setVisible(true);
+            skipButton.setManaged(true);
             playPauseButton.setStyle("-fx-background-color: #FFC107; -fx-text-fill: black; -fx-font-weight: bold; -fx-font-size: 14px;");
             return;
         }
@@ -216,8 +221,65 @@ public class MusicPlayerController {
         } else {
             audioPlayerService.playTrack(tracciaSelezionata, getCurrentTrackList());
             playPauseButton.setText("⏸ PAUSA");
+            skipButton.setVisible(true);
+            skipButton.setManaged(true);
             playPauseButton.setStyle("-fx-background-color: #FFC107; -fx-text-fill: black; -fx-font-weight: bold; -fx-font-size: 14px;");
         }
+    }
+
+    @FXML
+    public void onSkipClick() {
+
+        if (trackTable.getItems().isEmpty()) {
+            return;
+        }
+
+        Track tracciaCorrente = audioPlayerService.getCurrentTrack();
+
+        if (tracciaCorrente == null) {
+            return;
+        }
+
+        int indiceAttuale = trackTable.getItems().indexOf(tracciaCorrente);
+
+        if (indiceAttuale == -1) {
+            return;
+        }
+
+        int prossimoIndice = indiceAttuale + 1;
+
+        if (prossimoIndice >= trackTable.getItems().size()) {
+
+            audioPlayerService.stop();
+
+            skipButton.setVisible(false);
+            skipButton.setManaged(false);
+
+            playPauseButton.setText("▶ PLAY");
+            playPauseButton.setStyle(
+                    "-fx-background-color: #4CAF50; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-weight: bold; " +
+                            "-fx-font-size: 14px;"
+            );
+
+            return;
+        }
+
+        Track prossimaTraccia = trackTable.getItems().get(prossimoIndice);
+
+        trackTable.getSelectionModel().select(prossimoIndice);
+        trackTable.scrollTo(prossimoIndice);
+
+        audioPlayerService.playTrack(prossimaTraccia, getCurrentTrackList());
+
+        playPauseButton.setText("⏸ PAUSA");
+        playPauseButton.setStyle(
+                "-fx-background-color: #FFC107; " +
+                        "-fx-text-fill: black; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-font-size: 14px;"
+        );
     }
 
     @FXML
@@ -228,6 +290,8 @@ public class MusicPlayerController {
         }
 
         audioPlayerService.stop();
+        skipButton.setVisible(false);
+        skipButton.setManaged(false);
         playPauseButton.setText("▶ PLAY");
         playPauseButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
 
