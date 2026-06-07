@@ -96,36 +96,14 @@ public class MusicPlayerController {
             }
         });
 
-        // === LOGICA AUTOPLAY QUANDO FINISCE LA TRACCIA ===
+        // La riproduzione automatica della playlist è gestita direttamente da AudioPlayerService.
+        // Questa callback viene eseguita solo quando la playlist termina davvero.
         audioPlayerService.setOnTrackFinished(() -> {
-            Track tracciaFinita = audioPlayerService.getCurrentTrack();
-
-            // Cerchiamo l'indice della traccia che è appena terminata
-            int indiceAttuale = trackTable.getItems().indexOf(tracciaFinita);
-
-            // Controlliamo se la traccia esiste e SE NON è l'ultima della lista
-            if (indiceAttuale != -1 && indiceAttuale < trackTable.getItems().size() - 1) {
-
-                int prossimoIndice = indiceAttuale + 1;
-                Track prossimaTraccia = trackTable.getItems().get(prossimoIndice);
-
-                // Selezioniamo graficamente la riga successiva (questo aggiornerà anche i campi input)
-                trackTable.getSelectionModel().select(prossimoIndice);
-
-                // Facciamo partire la nuova canzone
-                audioPlayerService.playTrack(prossimaTraccia);
-
-                // Manteniamo il bottone nello stato "PAUSA" (colore giallo)
-                playPauseButton.setText("⏸ PAUSA");
-                playPauseButton.setStyle("-fx-background-color: #FFC107; -fx-text-fill: black; -fx-font-weight: bold; -fx-font-size: 14px;");
-
-            } else {
-                skipButton.setVisible(false);
-                skipButton.setManaged(false);
-                // Se eravamo all'ultima traccia, la riproduzione si ferma
-                playPauseButton.setText("▶ PLAY");
-                playPauseButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
-            }
+            skipButton.setVisible(false);
+            skipButton.setManaged(false);
+            playPauseButton.setText("▶ PLAY");
+            playPauseButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
+            timeLabel.setText("0:00 / 0:00");
         });
 
         // Questa callback serve quando una traccia finisce e AudioPlayerService

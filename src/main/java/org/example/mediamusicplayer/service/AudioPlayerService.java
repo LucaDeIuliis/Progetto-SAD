@@ -155,6 +155,7 @@ public class AudioPlayerService {
 
     public void stop() {
         stopTimelineOnly();
+        tracciaAttuale = null;
         secondiTrascorsi = 0;
 
         if (onTimeUpdate != null) {

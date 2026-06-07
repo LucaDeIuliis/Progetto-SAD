@@ -96,6 +96,18 @@ class AudioPlayerServiceTest {
     }
 
     @Test
+    void stop_ShouldClearCurrentTrack() {
+
+        Track track = createTrack("Song");
+
+        service.playTrack(track);
+
+        service.stop();
+
+        assertNull(service.getCurrentTrack());
+    }
+
+    @Test
     void playNextTrack_ShouldMoveToNextTrack() {
 
         Track first = createTrack("Track1");
