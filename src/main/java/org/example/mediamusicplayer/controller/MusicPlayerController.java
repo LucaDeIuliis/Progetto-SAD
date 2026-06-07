@@ -85,52 +85,68 @@ public class MusicPlayerController {
         playlistComboBox.setItems(libreria.getPlaylists());
         trackTable.setItems(libreria.getAllTracks());
 
-        // Gestione aggiornamento timer simulato a schermo
+        // DOPPIO CLICK SULLA TABELLA PER RIPRODURRE
+        trackTable.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                Track tracciaSelezionata = trackTable.getSelectionModel().getSelectedItem();
+                if (tracciaSelezionata != null) {
+                    audioPlayerService.playTrack(tracciaSelezionata, getCurrentTrackList());
+                    playPauseButton.setText("⏸ PAUSA");
+                    playPauseButton.setStyle("-fx-background-color: #FFC107; -fx-text-fill: black; -fx-font-weight: bold; -fx-font-size: 14px;");
+                    skipButton.setVisible(true);
+                    skipButton.setManaged(true);
+                }
+            }
+        });
+
+        // Aggiornamento timer (con il Titolo per non perdere mai l'orientamento)
         audioPlayerService.setOnTimeUpdate(() -> {
-            if (audioPlayerService.getCurrentTrack() != null) {
+            Track tracciaInRiproduzione = audioPlayerService.getCurrentTrack();
+            if (tracciaInRiproduzione != null) {
                 String current = audioPlayerService.getFormattedCurrentTime();
-                String total = audioPlayerService.getCurrentTrack().getFormattedLength();
-                timeLabel.setText(current + " / " + total);
+                String total = tracciaInRiproduzione.getFormattedLength();
+                timeLabel.setText(tracciaInRiproduzione.getTitle() + " - " + current + " / " + total);
             } else {
                 timeLabel.setText("0:00 / 0:00");
             }
         });
 
-        // La riproduzione automatica della playlist è gestita direttamente da AudioPlayerService.
-        // Questa callback viene eseguita solo quando la playlist termina davvero.
         audioPlayerService.setOnTrackFinished(() -> {
             skipButton.setVisible(false);
             skipButton.setManaged(false);
             playPauseButton.setText("▶ PLAY");
             playPauseButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
-            timeLabel.setText("0:00 / 0:00");
         });
 
-        // Questa callback serve quando una traccia finisce e AudioPlayerService
-        // passa automaticamente alla successiva tramite Strategy
+        // === BUG FIX AUTOPLAY: Proteggiamo l'aggiornamento visivo della tabella ===
         audioPlayerService.setOnTrackChanged(() -> {
             Track currentTrack = audioPlayerService.getCurrentTrack();
-
             if (currentTrack != null) {
-                trackTable.getSelectionModel().select(currentTrack);
-                trackTable.scrollTo(currentTrack);
+                // Esegue il cambio selezione SOLO se la schermata attuale contiene davvero la canzone
+                // Altrimenti lascia la musica andare senza generare errori visivi!
+                if (trackTable.getItems().contains(currentTrack)) {
+                    trackTable.getSelectionModel().select(currentTrack);
+                    trackTable.scrollTo(currentTrack);
+                }
+
                 playPauseButton.setText("⏸ PAUSA");
                 playPauseButton.setStyle("-fx-background-color: #FFC107; -fx-text-fill: black; -fx-font-weight: bold; -fx-font-size: 14px;");
+                skipButton.setVisible(true);
+                skipButton.setManaged(true);
             }
         });
 
-        // ASCOLTATORE CAMBIO PLAYLIST
+        // CAMBIO PLAYLIST
         playlistListView.getSelectionModel().selectedItemProperty().addListener((obs, vecchia, nuova) -> {
             if (nuova != null) {
                 playlistAttuale = nuova;
                 currentPlaylistLabel.setText("Stai ascoltando Playlist: " + playlistAttuale.getName());
                 trackTable.setItems(playlistAttuale.getTracks());
-
-                // Svuotiamo i campi quando cambiamo playlist!
                 clearTrackInputs();
             }
         });
 
+        // SELEZIONE TABELLA (Non avvia più l'audio da sola, riempie solo i campi)
         trackTable.getSelectionModel().selectedItemProperty().addListener((obs, vecchia, nuova) -> {
             if (nuova != null) {
                 titleInput.setText(nuova.getTitle());
@@ -140,11 +156,7 @@ public class MusicPlayerController {
                 long totalSeconds = nuova.getLength().getSeconds();
                 lengthInput.setText(String.format("%d:%02d", totalSeconds / 60, totalSeconds % 60));
 
-                if (audioPlayerService.isPlaying()) {
-                    audioPlayerService.playTrack(nuova, getCurrentTrackList());
-                    playPauseButton.setText("⏸ PAUSA");
-                    playPauseButton.setStyle("-fx-background-color: #FFC107; -fx-text-fill: black; -fx-font-weight: bold; -fx-font-size: 14px;");
-                } else {
+                if (!audioPlayerService.isPlaying() && !audioPlayerService.isPaused()) {
                     timeLabel.setText("0:00 / " + nuova.getFormattedLength());
                 }
             } else {
@@ -155,7 +167,6 @@ public class MusicPlayerController {
         });
     }
 
-    // === METODO DI UTILITA' PER PULIRE IL CODICE E I CAMPI ===
     private void clearTrackInputs() {
         titleInput.clear();
         authorInput.clear();
@@ -165,29 +176,25 @@ public class MusicPlayerController {
         trackTable.getSelectionModel().clearSelection();
     }
 
-    // Questo metodo restituisce la lista delle tracce attualmente visibili nella tabella
     private java.util.List<Track> getCurrentTrackList() {
         return new ArrayList<>(trackTable.getItems());
     }
 
+    // === COMANDI AUDIO ===
     @FXML
     public void onPlayPauseClick() {
         Track tracciaSelezionata = trackTable.getSelectionModel().getSelectedItem();
         Track tracciaCorrente = audioPlayerService.getCurrentTrack();
 
-        // CASO 1: Tutto vuoto. Non c'è selezione e non sta suonando niente.
         if (tracciaSelezionata == null && tracciaCorrente == null) {
             AlertUtil.showError("Nessuna traccia", "Seleziona prima una traccia dalla tabella per riprodurla.");
             return;
         }
 
-        // CASO 2: Bug Fix. La tabella è stata deselezionata, ma stiamo ascoltando una canzone.
-        // In questo caso, il bottone deve agire sulla canzone corrente (mettendola in pausa o riprendendola).
         if (tracciaSelezionata == null) {
             tracciaSelezionata = tracciaCorrente;
         }
 
-        // CASO 3: Abbiamo cliccato su una canzone DIVERSA da quella che stavamo ascoltando
         if (!tracciaSelezionata.equals(tracciaCorrente)) {
             audioPlayerService.playTrack(tracciaSelezionata, getCurrentTrackList());
             playPauseButton.setText("⏸ PAUSA");
@@ -197,7 +204,6 @@ public class MusicPlayerController {
             return;
         }
 
-        // CASO 4: La canzone è la STESSA (stiamo mettendo in pausa o riprendendo)
         if (audioPlayerService.isPlaying()) {
             audioPlayerService.pause();
             playPauseButton.setText("▶ PLAY");
@@ -215,59 +221,14 @@ public class MusicPlayerController {
         }
     }
 
+    // === BUG FIX SKIP: Semplificato drasticamente! ===
     @FXML
     public void onSkipClick() {
-
-        if (trackTable.getItems().isEmpty()) {
-            return;
+        // Il Controller non fa più nessun calcolo con la tabella grafica.
+        // Chiede semplicemente al Service (che ha la coda salvata) di mandare avanti la traccia!
+        if (audioPlayerService.getCurrentTrack() != null) {
+            audioPlayerService.playNextTrack();
         }
-
-        Track tracciaCorrente = audioPlayerService.getCurrentTrack();
-
-        if (tracciaCorrente == null) {
-            return;
-        }
-
-        int indiceAttuale = trackTable.getItems().indexOf(tracciaCorrente);
-
-        if (indiceAttuale == -1) {
-            return;
-        }
-
-        int prossimoIndice = indiceAttuale + 1;
-
-        if (prossimoIndice >= trackTable.getItems().size()) {
-
-            audioPlayerService.stop();
-
-            skipButton.setVisible(false);
-            skipButton.setManaged(false);
-
-            playPauseButton.setText("▶ PLAY");
-            playPauseButton.setStyle(
-                    "-fx-background-color: #4CAF50; " +
-                            "-fx-text-fill: white; " +
-                            "-fx-font-weight: bold; " +
-                            "-fx-font-size: 14px;"
-            );
-
-            return;
-        }
-
-        Track prossimaTraccia = trackTable.getItems().get(prossimoIndice);
-
-        trackTable.getSelectionModel().select(prossimoIndice);
-        trackTable.scrollTo(prossimoIndice);
-
-        audioPlayerService.playTrack(prossimaTraccia, getCurrentTrackList());
-
-        playPauseButton.setText("⏸ PAUSA");
-        playPauseButton.setStyle(
-                "-fx-background-color: #FFC107; " +
-                        "-fx-text-fill: black; " +
-                        "-fx-font-weight: bold; " +
-                        "-fx-font-size: 14px;"
-        );
     }
 
     @FXML
@@ -291,14 +252,13 @@ public class MusicPlayerController {
         }
     }
 
+    // === COMANDI GESTIONALI ===
     @FXML
     public void onViewAllTracksClick() {
         playlistAttuale = null;
         playlistListView.getSelectionModel().clearSelection();
         trackTable.setItems(libreria.getAllTracks());
         currentPlaylistLabel.setText("Gestione Tracce: Tutte le canzoni");
-
-        // Svuotiamo i campi quando torniamo a Tutte le Tracce!
         clearTrackInputs();
     }
 
@@ -358,8 +318,6 @@ public class MusicPlayerController {
             if (playlistAttuale != null) {
                 playlistService.addTrackToPlaylist(playlistAttuale, nuovaTraccia);
             }
-
-            // Usiamo il nuovo metodo pulito!
             clearTrackInputs();
 
         } catch (TrackValidationException e) {
@@ -383,7 +341,6 @@ public class MusicPlayerController {
             );
 
             trackTable.refresh();
-            // Usiamo il nuovo metodo pulito!
             clearTrackInputs();
 
         } catch (TrackValidationException e) {
@@ -433,9 +390,11 @@ public class MusicPlayerController {
             return;
         }
 
-        audioPlayerService.stop();
-        playPauseButton.setText("▶ PLAY");
-        playPauseButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
+        if (tracciaSelezionata.equals(audioPlayerService.getCurrentTrack())) {
+            audioPlayerService.stop();
+            playPauseButton.setText("▶ PLAY");
+            playPauseButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
+        }
 
         if (playlistAttuale == null) {
             libraryService.deleteTrackGlobal(libreria, tracciaSelezionata);
@@ -443,7 +402,6 @@ public class MusicPlayerController {
             playlistService.removeTrackFromPlaylist(playlistAttuale, tracciaSelezionata);
         }
 
-        // Usiamo il nuovo metodo pulito!
         clearTrackInputs();
     }
 }
