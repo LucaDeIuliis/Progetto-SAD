@@ -201,4 +201,144 @@ class AudioPlayerServiceTest {
 
         assertTrue(called.get());
     }
+    @Test
+    void updateCurrentPlaylistQueue_ShouldUseNewTracksForSequentialPlayback() {
+        Track first = createTrack("A");
+        Track second = createTrack("B");
+
+        service.playTrack(first, java.util.List.of(first));
+        service.updateCurrentPlaylistQueue(java.util.List.of(first, second));
+
+        service.playNextTrack();
+
+        assertEquals(second, service.getCurrentTrack());
+    }
+    @Test
+    void updateCurrentPlaylistQueue_WithMultipleTracks_ShouldPlayAllSequentially() {
+
+        Track first = createTrack("A");
+        Track second = createTrack("B");
+        Track third = createTrack("C");
+
+        service.playTrack(first, List.of(first));
+
+        service.updateCurrentPlaylistQueue(
+                List.of(first, second, third)
+        );
+
+        service.playNextTrack();
+        assertEquals(second, service.getCurrentTrack());
+
+        service.playNextTrack();
+        assertEquals(third, service.getCurrentTrack());
+    }
+
+    @Test
+    void updateCurrentPlaylistQueue_WhilePaused_ShouldPreserveCurrentTrack() {
+
+        Track first = createTrack("A");
+        Track second = createTrack("B");
+
+        service.playTrack(first, List.of(first, second));
+
+        service.pause();
+
+        service.updateCurrentPlaylistQueue(
+                List.of(first, second, createTrack("C"))
+        );
+
+        assertEquals(first, service.getCurrentTrack());
+        assertTrue(service.isPaused());
+    }
+
+    @Test
+    void updateCurrentPlaylistQueue_OnPenultimateTrack_ShouldReachNewTrack() {
+
+        Track first = createTrack("A");
+        Track second = createTrack("B");
+        Track third = createTrack("C");
+
+        service.playTrack(first, List.of(first, second));
+
+        service.playNextTrack();
+
+        assertEquals(second, service.getCurrentTrack());
+
+        service.updateCurrentPlaylistQueue(
+                List.of(first, second, third)
+        );
+
+        service.playNextTrack();
+
+        assertEquals(third, service.getCurrentTrack());
+    }
+
+    @Test
+    void updateCurrentPlaylistQueue_OnLastTrack_ShouldUseNewTrackInsteadOfStopping() {
+
+        Track first = createTrack("A");
+        Track second = createTrack("B");
+
+        service.playTrack(first, List.of(first));
+
+        service.updateCurrentPlaylistQueue(
+                List.of(first, second)
+        );
+
+        service.playNextTrack();
+
+        assertEquals(second, service.getCurrentTrack());
+    }
+
+    @Test
+    void updateCurrentPlaylistQueue_ShouldNotChangeCurrentTrack() {
+
+        Track first = createTrack("A");
+        Track second = createTrack("B");
+
+        service.playTrack(first, List.of(first));
+
+        service.updateCurrentPlaylistQueue(
+                List.of(first, second)
+        );
+
+        assertEquals(first, service.getCurrentTrack());
+    }
+
+    @Test
+    void stop_ShouldResetCurrentIndex() {
+
+        Track first = createTrack("A");
+        Track second = createTrack("B");
+
+        service.playTrack(first, List.of(first, second));
+
+        service.stop();
+
+        assertEquals(0, service.getCurrentIndex());
+    }
+
+    @Test
+    void playTrack_ShouldInitializeCurrentIndex() {
+
+        Track first = createTrack("A");
+        Track second = createTrack("B");
+
+        service.playTrack(second, List.of(first, second));
+
+        assertEquals(1, service.getCurrentIndex());
+    }
+
+    @Test
+    void playNextTrack_ShouldUpdateCurrentIndex() {
+
+        Track first = createTrack("A");
+        Track second = createTrack("B");
+
+        service.playTrack(first, List.of(first, second));
+
+        service.playNextTrack();
+
+        assertEquals(1, service.getCurrentIndex());
+    }
 }

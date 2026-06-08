@@ -88,7 +88,15 @@ public class MusicPlayerController {
         // DOPPIO CLICK SULLA TABELLA PER RIPRODURRE
         trackTable.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
-                Track tracciaSelezionata = trackTable.getSelectionModel().getSelectedItem();
+                Track tracciaSelezionata =
+        trackTable.getSelectionModel().getSelectedItem();
+
+if (tracciaSelezionata == null &&
+        !trackTable.getItems().isEmpty()) {
+
+    tracciaSelezionata =
+            trackTable.getItems().get(0);
+}
                 if (tracciaSelezionata != null) {
                     audioPlayerService.playTrack(tracciaSelezionata, getCurrentTrackList());
                     playPauseButton.setText("⏸ PAUSA");
@@ -183,7 +191,22 @@ public class MusicPlayerController {
     // === COMANDI AUDIO ===
     @FXML
     public void onPlayPauseClick() {
-        Track tracciaSelezionata = trackTable.getSelectionModel().getSelectedItem();
+        if (trackTable.getItems().isEmpty()) {
+            AlertUtil.showError(
+                    "Playlist vuota",
+                    "Non ci sono tracce da riprodurre."
+            );
+            return;
+        }
+        Track tracciaSelezionata =
+        trackTable.getSelectionModel().getSelectedItem();
+
+if (tracciaSelezionata == null &&
+        !trackTable.getItems().isEmpty()) {
+
+    tracciaSelezionata =
+            trackTable.getItems().get(0);
+}
         Track tracciaCorrente = audioPlayerService.getCurrentTrack();
 
         if (tracciaSelezionata == null && tracciaCorrente == null) {
@@ -244,7 +267,8 @@ public class MusicPlayerController {
         playPauseButton.setText("▶ PLAY");
         playPauseButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
 
-        Track tracciaSelezionata = trackTable.getSelectionModel().getSelectedItem();
+        Track tracciaSelezionata =
+        trackTable.getSelectionModel().getSelectedItem();
         if (tracciaSelezionata != null) {
             timeLabel.setText("0:00 / " + tracciaSelezionata.getFormattedLength());
         } else {
@@ -317,6 +341,19 @@ public class MusicPlayerController {
 
             if (playlistAttuale != null) {
                 playlistService.addTrackToPlaylist(playlistAttuale, nuovaTraccia);
+
+                if (audioPlayerService.getCurrentTrack() != null
+                        && playlistAttuale.getTracks().contains(audioPlayerService.getCurrentTrack())) {
+
+                    audioPlayerService.updateCurrentPlaylistQueue(
+                            new ArrayList<>(playlistAttuale.getTracks())
+                    );
+
+                    AlertUtil.showInfo(
+                            "Playlist aggiornata",
+                            "La nuova traccia è stata aggiunta alla coda della riproduzione corrente."
+                    );
+                }
             }
             clearTrackInputs();
 
@@ -327,7 +364,8 @@ public class MusicPlayerController {
 
     @FXML
     public void onUpdateTrackClick() {
-        Track tracciaSelezionata = trackTable.getSelectionModel().getSelectedItem();
+        Track tracciaSelezionata =
+                trackTable.getSelectionModel().getSelectedItem();
         if (tracciaSelezionata == null) {
             AlertUtil.showError("Nessuna selezione", "Seleziona una traccia dalla tabella per modificarla.");
             return;
@@ -350,7 +388,8 @@ public class MusicPlayerController {
 
     @FXML
     public void onAssignToPlaylistClick() {
-        Track tracciaSelezionata = trackTable.getSelectionModel().getSelectedItem();
+        Track tracciaSelezionata =
+        trackTable.getSelectionModel().getSelectedItem();
         Playlist playlistScelta = playlistComboBox.getValue();
 
         if (tracciaSelezionata == null) {
@@ -364,6 +403,14 @@ public class MusicPlayerController {
 
         try {
             playlistService.addTrackToPlaylist(playlistScelta, tracciaSelezionata);
+
+            if (audioPlayerService.getCurrentTrack() != null
+                    && playlistScelta.getTracks().contains(audioPlayerService.getCurrentTrack())) {
+                audioPlayerService.updateCurrentPlaylistQueue(
+                        new ArrayList<>(playlistScelta.getTracks())
+                );
+            }
+
             AlertUtil.showInfo("Fatto!", "Traccia aggiunta a " + playlistScelta.getName());
         } catch (PlaylistValidationException e) {
             AlertUtil.showError(e.getHeader(), e.getMessage());
@@ -384,7 +431,9 @@ public class MusicPlayerController {
 
     @FXML
     public void onDeleteTrackClick() {
-        Track tracciaSelezionata = trackTable.getSelectionModel().getSelectedItem();
+        Track tracciaSelezionata =
+        trackTable.getSelectionModel().getSelectedItem();
+
         if (tracciaSelezionata == null) {
             AlertUtil.showError("Nessuna selezione", "Clicca su una traccia prima di eliminarla.");
             return;
