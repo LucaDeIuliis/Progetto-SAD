@@ -9,7 +9,8 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
-
+import org.example.mediamusicplayer.service.playlistnavigation.PlaylistNavigationStrategy;
+import org.example.mediamusicplayer.service.playlistnavigation.PlaylistNavigationStrategyFactory;
 import org.example.mediamusicplayer.model.MusicLibrary;
 import org.example.mediamusicplayer.model.Playlist;
 import org.example.mediamusicplayer.model.Track;
@@ -35,6 +36,7 @@ public class MusicPlayerController implements PlaybackObserver {
 
     @FXML private Button playPauseButton;
     @FXML private Button skipButton;
+    @FXML private Button skipPlaylistButton;
     @FXML private Label timeLabel;
     @FXML private ComboBox<PlaybackMode> playbackModeComboBox;
 
@@ -115,7 +117,7 @@ public class MusicPlayerController implements PlaybackObserver {
                 playlistAttuale = nuova;
                 currentPlaylistLabel.setText("Stai ascoltando Playlist: " + playlistAttuale.getName());
                 trackTable.setItems(playlistAttuale.getTracks());
-
+                showSkipPlaylistButton();
                 clearTrackInputs();
             }
         });
@@ -261,6 +263,84 @@ public class MusicPlayerController implements PlaybackObserver {
     }
 
     @FXML
+    public void onSkipPlaylistClick() {
+        if (playlistAttuale == null) {
+            AlertUtil.showError(
+                    "Nessuna playlist attiva",
+                    "Lo skip playlist è disponibile solo quando ti trovi dentro una playlist."
+            );
+            return;
+        }
+
+        if (libreria.getPlaylists().isEmpty()) {
+            AlertUtil.showError(
+                    "Nessuna playlist disponibile",
+                    "Non ci sono playlist disponibili."
+            );
+            return;
+        }
+
+        PlaybackMode selectedMode = playbackModeComboBox.getValue();
+
+        PlaylistNavigationStrategy strategy =
+                PlaylistNavigationStrategyFactory.create(selectedMode);
+
+        Playlist prossimaPlaylist =
+                strategy.getNextPlaylist(libreria.getPlaylists(), playlistAttuale);
+
+        if (prossimaPlaylist == null) {
+            audioPlayerService.stop();
+            hideSkipButton();
+            setPlayButtonState();
+            timeLabel.setText("0:00 / 0:00");
+
+            AlertUtil.showInfo(
+                    "Fine playlist",
+                    "Non ci sono altre playlist da riprodurre in modalità sequenziale."
+            );
+            return;
+        }
+
+        playlistAttuale = prossimaPlaylist;
+
+        playlistListView.getSelectionModel().select(prossimaPlaylist);
+        currentPlaylistLabel.setText("Stai ascoltando Playlist: " + playlistAttuale.getName());
+        trackTable.setItems(playlistAttuale.getTracks());
+
+        showSkipPlaylistButton();
+        clearTrackInputs();
+
+        if (playlistAttuale.getTracks().isEmpty()) {
+            audioPlayerService.stop();
+            hideSkipButton();
+            setPlayButtonState();
+            timeLabel.setText("0:00 / 0:00");
+
+            AlertUtil.showInfo(
+                    "Playlist vuota",
+                    "La playlist selezionata non contiene tracce da riprodurre."
+            );
+            return;
+        }
+
+        Track primaTraccia = playlistAttuale.getTracks().get(0);
+
+        audioPlayerService.playTrack(primaTraccia, playlistAttuale.getTracks());
+        setPauseButtonState();
+        showSkipButton();
+    }
+
+    private void showSkipPlaylistButton() {
+        skipPlaylistButton.setVisible(true);
+        skipPlaylistButton.setManaged(true);
+    }
+
+    private void hideSkipPlaylistButton() {
+        skipPlaylistButton.setVisible(false);
+        skipPlaylistButton.setManaged(false);
+    }
+
+    @FXML
     public void onStopClick() {
         if (!audioPlayerService.isPlaying() && !audioPlayerService.isPaused()) {
             AlertUtil.showError("Audio già fermo", "Non c'è nessuna traccia in riproduzione o in pausa da fermare.");
@@ -288,6 +368,7 @@ public class MusicPlayerController implements PlaybackObserver {
         playlistListView.getSelectionModel().clearSelection();
         trackTable.setItems(libreria.getAllTracks());
         currentPlaylistLabel.setText("Gestione Tracce: Tutte le canzoni");
+        hideSkipPlaylistButton();
         clearTrackInputs();
     }
 

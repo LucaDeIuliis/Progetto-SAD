@@ -65,6 +65,13 @@
 
                     <Label text="Modalità:" style="-fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 0 0 0 20;" />
                     <ComboBox fx:id="playbackModeComboBox" prefWidth="140.0" />
+                    <Button fx:id="skipPlaylistButton"
+                            text="⏭ Playlist"
+                            onAction="#onSkipPlaylistClick"
+                            visible="false"
+                            managed="false"
+                            prefWidth="120.0"
+                            style="-fx-background-color: #9C27B0; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;" />
                 </HBox>
             </VBox>
 
