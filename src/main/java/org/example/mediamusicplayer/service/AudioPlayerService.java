@@ -4,12 +4,15 @@ import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.util.Duration;
-import org.example.mediamusicplayer.service.playback.PlaybackMode;
-import org.example.mediamusicplayer.service.playback.PlaybackStrategyFactory;
+
 import org.example.mediamusicplayer.model.Track;
+import org.example.mediamusicplayer.service.playback.PlaybackMode;
+import org.example.mediamusicplayer.service.playback.PlaybackObserver;
 import org.example.mediamusicplayer.service.playback.PlaybackStrategy;
+import org.example.mediamusicplayer.service.playback.PlaybackStrategyFactory;
 import org.example.mediamusicplayer.service.playback.SequentialPlaybackStrategy;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class AudioPlayerService {
@@ -21,49 +24,86 @@ public class AudioPlayerService {
 
     private PlaybackStrategy playbackStrategy;
 
-    // Callbacks per comunicare con il Controller e aggiornare l'interfaccia
-    private Runnable onTimeUpdate;
-    private Runnable onTrackFinished;
-    private Runnable onTrackChanged;
+    /*
+     * OBSERVER PATTERN:
+     * AudioPlayerService è il Subject.
+     * I PlaybackObserver registrati vengono notificati quando:
+     * - cambia il tempo di riproduzione;
+     * - cambia la traccia corrente;
+     * - termina la riproduzione.
+     */
+    private final List<PlaybackObserver> observers = new ArrayList<>();
 
     public AudioPlayerService() {
         this.playbackStrategy = new SequentialPlaybackStrategy();
     }
 
-    public void setOnTimeUpdate(Runnable onTimeUpdate) {
-        this.onTimeUpdate = onTimeUpdate;
-    }
+    // =========================================================
+    // OBSERVER PATTERN
+    // =========================================================
 
-    public void setOnTrackFinished(Runnable onTrackFinished) {
-        this.onTrackFinished = onTrackFinished;
-    }
-
-    public void setOnTrackChanged(Runnable onTrackChanged) {
-        this.onTrackChanged = onTrackChanged;
-    }
-
-    public void setPlaybackStrategy(PlaybackStrategy playbackStrategy) {
-        if (playbackStrategy != null) {
-            this.playbackStrategy = playbackStrategy;
+    public void addObserver(PlaybackObserver observer) {
+        if (observer != null && !observers.contains(observer)) {
+            observers.add(observer);
         }
     }
+
+    private void notifyTimeUpdate() {
+        for (PlaybackObserver observer : observers) {
+            observer.onTimeUpdate(getFormattedCurrentTime(), tracciaAttuale);
+        }
+    }
+
+    private void notifyTrackChanged() {
+        for (PlaybackObserver observer : observers) {
+            observer.onTrackChanged(tracciaAttuale);
+        }
+    }
+
+    private void notifyPlaybackFinished() {
+        for (PlaybackObserver observer : observers) {
+            observer.onPlaybackFinished();
+        }
+    }
+
+    // =========================================================
+    // STRATEGY / FACTORY PATTERN
+    // =========================================================
 
     public void setPlaybackMode(PlaybackMode mode) {
         this.playbackStrategy = PlaybackStrategyFactory.create(mode);
     }
 
+    // =========================================================
+    // GETTERS
+    // =========================================================
+
     public Track getCurrentTrack() {
         return tracciaAttuale;
     }
 
-    public void playTrack(Track track) {
-        playTrack(track, null);
+    public String getFormattedCurrentTime() {
+        return String.format("%d:%02d", secondiTrascorsi / 60, secondiTrascorsi % 60);
     }
 
-    // Questo serve perché lo Strategy Pattern deve conoscere la lista da cui scegliere la prossima traccia.
+    public boolean isPlaying() {
+        return timeline != null && timeline.getStatus() == Animation.Status.RUNNING;
+    }
 
+    public boolean isPaused() {
+        return timeline != null && timeline.getStatus() == Animation.Status.PAUSED;
+    }
+
+    // =========================================================
+    // PLAYBACK LOGIC
+    // =========================================================
+
+    /*
+     * Questo metodo riceve anche la lista corrente perché lo Strategy Pattern
+     * deve conoscere l'insieme delle tracce da cui scegliere la prossima.
+     */
     public void playTrack(Track track, List<Track> tracks) {
-        stop();
+        stopTimelineOnly();
 
         this.tracciaAttuale = track;
         this.playlistCorrente = tracks;
@@ -71,13 +111,8 @@ public class AudioPlayerService {
 
         startTimelineForCurrentTrack();
 
-        if (onTrackChanged != null) {
-            onTrackChanged.run();
-        }
-
-        if (onTimeUpdate != null) {
-            onTimeUpdate.run();
-        }
+        notifyTrackChanged();
+        notifyTimeUpdate();
     }
 
     private void startTimelineForCurrentTrack() {
@@ -90,9 +125,7 @@ public class AudioPlayerService {
         timeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
             secondiTrascorsi++;
 
-            if (onTimeUpdate != null) {
-                onTimeUpdate.run();
-            }
+            notifyTimeUpdate();
 
             if (secondiTrascorsi >= durataTotale) {
                 playNextTrack();
@@ -116,13 +149,8 @@ public class AudioPlayerService {
             tracciaAttuale = null;
             secondiTrascorsi = 0;
 
-            if (onTimeUpdate != null) {
-                onTimeUpdate.run();
-            }
-
-            if (onTrackFinished != null) {
-                onTrackFinished.run();
-            }
+            notifyTimeUpdate();
+            notifyPlaybackFinished();
 
             return;
         }
@@ -132,13 +160,8 @@ public class AudioPlayerService {
 
         startTimelineForCurrentTrack();
 
-        if (onTrackChanged != null) {
-            onTrackChanged.run();
-        }
-
-        if (onTimeUpdate != null) {
-            onTimeUpdate.run();
-        }
+        notifyTrackChanged();
+        notifyTimeUpdate();
     }
 
     public void pause() {
@@ -155,29 +178,16 @@ public class AudioPlayerService {
 
     public void stop() {
         stopTimelineOnly();
+
         tracciaAttuale = null;
         secondiTrascorsi = 0;
 
-        if (onTimeUpdate != null) {
-            onTimeUpdate.run();
-        }
+        notifyTimeUpdate();
     }
 
     private void stopTimelineOnly() {
         if (timeline != null) {
             timeline.stop();
         }
-    }
-
-    public boolean isPlaying() {
-        return timeline != null && timeline.getStatus() == Animation.Status.RUNNING;
-    }
-
-    public boolean isPaused() {
-        return timeline != null && timeline.getStatus() == Animation.Status.PAUSED;
-    }
-
-    public String getFormattedCurrentTime() {
-        return String.format("%d:%02d", secondiTrascorsi / 60, secondiTrascorsi % 60);
     }
 }

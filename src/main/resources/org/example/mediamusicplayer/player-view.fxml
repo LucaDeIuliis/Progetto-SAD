@@ -29,8 +29,8 @@
             <VBox spacing="8.0">
                 <TextField fx:id="newPlaylistInput" promptText="Nome nuova playlist..." />
 
-                <Button text="Crea Playlist" onAction="#onAddPlaylistClick" maxWidth="Infinity" style="-fx-background-color: #2196F3; -fx-text-fill: white;" />
-                <Button text="Rinomina Playlist" onAction="#onRenamePlaylistClick" maxWidth="Infinity" style="-fx-background-color: #FFC107; -fx-text-fill: black;" />
+                <Button text="Crea Playlist" onAction="#onAddPlaylistClick" maxWidth="Infinity" style="-fx-background-color: #4CAF50; -fx-text-fill: white;" />
+                <Button text="Rinomina Playlist" onAction="#onRenamePlaylistClick" maxWidth="Infinity" style="-fx-background-color: #2196F3; -fx-text-fill: white;" />
                 <Button text="Elimina Playlist" onAction="#onDeletePlaylistClick" maxWidth="Infinity" style="-fx-background-color: #f44336; -fx-text-fill: white;" />
             </VBox>
         </VBox>
@@ -46,7 +46,7 @@
 
             <VBox alignment="CENTER" spacing="8.0" style="-fx-padding: 10; -fx-background-color: #2b2b2b; -fx-background-radius: 8;">
 
-                <Label fx:id="timeLabel" text="0:00 / 0:00" maxWidth="680.0" alignment="CENTER" textOverrun="ELLIPSIS" style="-fx-text-fill: #4CAF50; -fx-font-weight: bold; -fx-font-size: 16px;" />
+                <Label fx:id="timeLabel" text="0:00 / 0:00" maxWidth="680.0" alignment="CENTER" style="-fx-text-fill: #4CAF50; -fx-font-weight: bold; -fx-font-size: 16px;" />
 
                 <HBox alignment="CENTER" spacing="15.0">
                     <Button fx:id="playPauseButton" text="▶ PLAY" onAction="#onPlayPauseClick" prefWidth="120.0" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;" />
