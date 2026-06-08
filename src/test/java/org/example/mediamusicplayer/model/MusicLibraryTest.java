@@ -79,4 +79,16 @@ class MusicLibraryTest {
         assertEquals(2, musicLibrary.getPlaylists().size());
         assertEquals(2, musicLibrary.getAllTracks().size());
     }
+
+    @Test
+    void constructor_ShouldInitializeCollections() {
+
+        MusicLibrary library = new MusicLibrary();
+
+        assertNotNull(library.getPlaylists());
+        assertNotNull(library.getAllTracks());
+
+        assertTrue(library.getPlaylists().isEmpty());
+        assertTrue(library.getAllTracks().isEmpty());
+    }
 }

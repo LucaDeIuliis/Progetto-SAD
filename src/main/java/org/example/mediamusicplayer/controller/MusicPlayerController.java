@@ -116,7 +116,9 @@ public class MusicPlayerController implements PlaybackObserver {
         playlistListView.getSelectionModel().selectedItemProperty().addListener((obs, vecchia, nuova) -> {
             if (nuova != null) {
                 playlistAttuale = nuova;
-                currentPlaylistLabel.setText("Stai ascoltando Playlist: " + playlistAttuale.getName());
+                if (!audioPlayerService.isPlaying()) {
+                    currentPlaylistLabel.setText("Stai ascoltando Playlist: " + playlistAttuale.getName());
+                }
                 trackTable.setItems(playlistAttuale.getTracks());
                 showSkipPlaylistButton();
                 clearTrackInputs();

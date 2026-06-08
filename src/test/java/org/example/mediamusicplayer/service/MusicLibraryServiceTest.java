@@ -146,4 +146,74 @@ class MusicLibraryServiceTest {
                 () -> service.deleteTrackGlobal(library, null)
         );
     }
+
+    @Test
+    void addPlaylist_DuplicatePlaylist_ShouldNotModifyLibrary() {
+
+        Playlist playlist = new Playlist("Rock");
+
+        library.getPlaylists().add(playlist);
+
+        assertThrows(
+                PlaylistValidationException.class,
+                () -> service.addPlaylist(library, playlist)
+        );
+
+        assertEquals(1, library.getPlaylists().size());
+    }
+
+    @Test
+    void deletePlaylist_NotExistingPlaylist_ShouldDoNothing() {
+
+        Playlist playlist = new Playlist("Rock");
+
+        assertDoesNotThrow(
+                () -> service.deletePlaylist(library, playlist)
+        );
+
+        assertTrue(library.getPlaylists().isEmpty());
+    }
+
+    @Test
+    void deleteTrackGlobal_ShouldNotRemoveOtherTracks() {
+
+        Track track1 = createTrack();
+
+        Track track2 = new Track(
+                "Song2",
+                "Artist2",
+                Duration.ofSeconds(200),
+                "Pop",
+                Year.of(2021)
+        );
+
+        Playlist playlist = new Playlist("Mix");
+
+        playlist.addTrack(track1);
+        playlist.addTrack(track2);
+
+        library.getPlaylists().add(playlist);
+        library.getAllTracks().add(track1);
+        library.getAllTracks().add(track2);
+
+        service.deleteTrackGlobal(library, track1);
+
+        assertFalse(library.getAllTracks().contains(track1));
+        assertTrue(library.getAllTracks().contains(track2));
+
+        assertFalse(playlist.getTracks().contains(track1));
+        assertTrue(playlist.getTracks().contains(track2));
+    }
+
+    @Test
+    void deleteTrackGlobal_NotExistingTrack_ShouldDoNothing() {
+
+        Track track = createTrack();
+
+        assertDoesNotThrow(
+                () -> service.deleteTrackGlobal(library, track)
+        );
+
+        assertTrue(library.getAllTracks().isEmpty());
+    }
 }

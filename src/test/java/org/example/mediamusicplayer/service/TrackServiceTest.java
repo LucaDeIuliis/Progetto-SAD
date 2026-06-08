@@ -180,4 +180,98 @@ class TrackServiceTest {
                 )
         );
     }
+
+    @Test
+    void createTrack_ZeroDuration_ShouldThrowException() {
+
+        assertThrows(
+                TrackValidationException.class,
+                () -> trackService.createTrack(
+                        "Song",
+                        "Artist",
+                        "0",
+                        "Rock",
+                        "2020",
+                        library
+                )
+        );
+    }
+
+    @Test
+    void createTrack_DurationInSeconds_ShouldCreateTrack() {
+
+        Track track = trackService.createTrack(
+                "Song",
+                "Artist",
+                "225",
+                "Rock",
+                "2020",
+                library
+        );
+
+        assertEquals(
+                Duration.ofSeconds(225),
+                track.getLength()
+        );
+    }
+    @Test
+    void updateTrack_DuplicateTrack_ShouldThrowException() {
+
+        Track track1 = new Track(
+                "Song1",
+                "Artist1",
+                Duration.ofSeconds(100),
+                "Pop",
+                Year.of(2020)
+        );
+
+        Track track2 = new Track(
+                "Song2",
+                "Artist2",
+                Duration.ofSeconds(100),
+                "Pop",
+                Year.of(2020)
+        );
+
+        library.getAllTracks().add(track1);
+        library.getAllTracks().add(track2);
+
+        assertThrows(
+                TrackValidationException.class,
+                () -> trackService.updateTrack(
+                        track2,
+                        "Song1",
+                        "Artist1",
+                        "200",
+                        "Rock",
+                        "2022",
+                        library
+                )
+        );
+    }
+    @Test
+    void updateTrack_SameTrack_ShouldNotBeConsideredDuplicate() {
+
+        Track track = new Track(
+                "Song",
+                "Artist",
+                Duration.ofSeconds(100),
+                "Pop",
+                Year.of(2020)
+        );
+
+        library.getAllTracks().add(track);
+
+        assertDoesNotThrow(
+                () -> trackService.updateTrack(
+                        track,
+                        "Song",
+                        "Artist",
+                        "200",
+                        "Rock",
+                        "2021",
+                        library
+                )
+        );
+    }
 }

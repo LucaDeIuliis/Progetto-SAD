@@ -80,4 +80,36 @@ class TrackTest {
         assertEquals(Year.of(2024), track.getYear());
         assertEquals(Duration.ofSeconds(300), track.getLength());
     }
+
+    @Test
+    void getFormattedLength_ShouldHandleLongTracks() {
+
+        Track track = new Track(
+                "Song",
+                "Artist",
+                Duration.ofSeconds(3665),
+                "Rock",
+                Year.of(2020)
+        );
+
+        assertEquals("61:05", track.getFormattedLength());
+    }
+
+    @Test
+    void constructor_ShouldSetFields() {
+
+        Track track = new Track(
+                "Song",
+                "Artist",
+                Duration.ofSeconds(200),
+                "Rock",
+                Year.of(2020)
+        );
+
+        assertEquals("Song", track.getTitle());
+        assertEquals("Artist", track.getAuthor());
+        assertEquals("Rock", track.getGenre());
+        assertEquals(Year.of(2020), track.getYear());
+        assertEquals(Duration.ofSeconds(200), track.getLength());
+    }
 }

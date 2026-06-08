@@ -63,4 +63,40 @@ class PlaylistTest {
 
         assertEquals("Rock", playlist.toString());
     }
+    @Test
+    void setName_ShouldUpdateName() {
+
+        Playlist playlist = new Playlist("Rock");
+
+        playlist.setName("Metal");
+
+        assertEquals("Metal", playlist.getName());
+    }
+
+    @Test
+    void addMultipleTracks_ShouldStoreAllTracks() {
+
+        Playlist playlist = new Playlist("Rock");
+
+        Track t1 = new Track(
+                "Song1",
+                "Artist1",
+                Duration.ofSeconds(100),
+                "Rock",
+                Year.of(2020)
+        );
+
+        Track t2 = new Track(
+                "Song2",
+                "Artist2",
+                Duration.ofSeconds(200),
+                "Rock",
+                Year.of(2021)
+        );
+
+        playlist.addTrack(t1);
+        playlist.addTrack(t2);
+
+        assertEquals(2, playlist.getTracks().size());
+    }
 }

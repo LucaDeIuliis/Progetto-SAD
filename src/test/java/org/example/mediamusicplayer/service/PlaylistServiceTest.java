@@ -176,4 +176,105 @@ class PlaylistServiceTest {
                 )
         );
     }
+
+    @Test
+    void createPlaylist_NullName_ShouldThrowException() {
+
+        assertThrows(
+                PlaylistValidationException.class,
+                () -> playlistService.createPlaylist(null, library)
+        );
+    }
+
+    @Test
+    void createPlaylist_BlankName_ShouldThrowException() {
+
+        assertThrows(
+                PlaylistValidationException.class,
+                () -> playlistService.createPlaylist("   ", library)
+        );
+    }
+
+    @Test
+    void createPlaylist_ShouldTrimName() {
+
+        Playlist playlist = playlistService.createPlaylist(
+                "   Rock Classics   ",
+                library
+        );
+
+        assertEquals("Rock Classics", playlist.getName());
+    }
+
+    @Test
+    void renamePlaylist_NullPlaylist_ShouldThrowException() {
+
+        assertThrows(
+                PlaylistValidationException.class,
+                () -> playlistService.renamePlaylist(
+                        null,
+                        "New Name",
+                        library
+                )
+        );
+    }
+
+    @Test
+    void renamePlaylist_NullName_ShouldThrowException() {
+
+        Playlist playlist = new Playlist("Old");
+
+        assertThrows(
+                PlaylistValidationException.class,
+                () -> playlistService.renamePlaylist(
+                        playlist,
+                        null,
+                        library
+                )
+        );
+    }
+
+    @Test
+    void renamePlaylist_SameName_ShouldBeAllowed() {
+
+        Playlist playlist = new Playlist("Rock");
+
+        library.getPlaylists().add(playlist);
+
+        assertDoesNotThrow(
+                () -> playlistService.renamePlaylist(
+                        playlist,
+                        "Rock",
+                        library
+                )
+        );
+    }
+
+    @Test
+    void addTrackToPlaylist_NullTrack_ShouldThrowException() {
+
+        Playlist playlist = new Playlist("My Playlist");
+
+        assertThrows(
+                PlaylistValidationException.class,
+                () -> playlistService.addTrackToPlaylist(
+                        playlist,
+                        null
+                )
+        );
+    }
+
+    @Test
+    void removeTrackFromPlaylist_NullTrack_ShouldThrowException() {
+
+        Playlist playlist = new Playlist("My Playlist");
+
+        assertThrows(
+                PlaylistValidationException.class,
+                () -> playlistService.removeTrackFromPlaylist(
+                        playlist,
+                        null
+                )
+        );
+    }
 }
