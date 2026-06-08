@@ -55,6 +55,7 @@ public class MusicPlayerController implements PlaybackObserver {
 
     private MusicLibrary libreria;
     private Playlist playlistAttuale;
+    private Playlist playlistCorrente;
 
     private TrackService trackService;
     private PlaylistService playlistService;
@@ -102,9 +103,9 @@ public class MusicPlayerController implements PlaybackObserver {
         trackTable.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
                 Track tracciaSelezionata = trackTable.getSelectionModel().getSelectedItem();
-
                 if (tracciaSelezionata != null) {
                     audioPlayerService.playTrack(tracciaSelezionata, getCurrentTrackList());
+                    playlistCorrente = playlistAttuale;
                     setPauseButtonState();
                     showSkipButton();
                 }
@@ -233,21 +234,22 @@ public class MusicPlayerController implements PlaybackObserver {
         if (tracciaSelezionata == null) {
             tracciaSelezionata = tracciaCorrente;
         }
-
+        if (audioPlayerService.isPlaying()) {
+            audioPlayerService.pause();
+            setPlayButtonState();
+            return;
+        }
         if (!tracciaSelezionata.equals(tracciaCorrente)) {
             audioPlayerService.playTrack(tracciaSelezionata, getCurrentTrackList());
+            playlistCorrente = playlistAttuale;
             setPauseButtonState();
             showSkipButton();
             return;
         }
-
-        if (audioPlayerService.isPlaying()) {
-            audioPlayerService.pause();
-            setPlayButtonState();
-        } else if (audioPlayerService.isPaused()) {
+        if (audioPlayerService.isPaused()) {
             audioPlayerService.resume();
             setPauseButtonState();
-        } else {
+        } else if (!audioPlayerService.isPlaying()) {
             audioPlayerService.playTrack(tracciaSelezionata, getCurrentTrackList());
             setPauseButtonState();
             showSkipButton();
@@ -264,7 +266,7 @@ public class MusicPlayerController implements PlaybackObserver {
 
     @FXML
     public void onSkipPlaylistClick() {
-        if (playlistAttuale == null) {
+        if (playlistCorrente == null) {
             AlertUtil.showError(
                     "Nessuna playlist attiva",
                     "Lo skip playlist è disponibile solo quando ti trovi dentro una playlist."
@@ -286,7 +288,7 @@ public class MusicPlayerController implements PlaybackObserver {
                 PlaylistNavigationStrategyFactory.create(selectedMode);
 
         Playlist prossimaPlaylist =
-                strategy.getNextPlaylist(libreria.getPlaylists(), playlistAttuale);
+                strategy.getNextPlaylist(libreria.getPlaylists(), playlistCorrente);
 
         if (prossimaPlaylist == null) {
             audioPlayerService.stop();
@@ -300,17 +302,19 @@ public class MusicPlayerController implements PlaybackObserver {
             );
             return;
         }
-
+        playlistCorrente = prossimaPlaylist;
         playlistAttuale = prossimaPlaylist;
 
         playlistListView.getSelectionModel().select(prossimaPlaylist);
-        currentPlaylistLabel.setText("Stai ascoltando Playlist: " + playlistAttuale.getName());
+        currentPlaylistLabel.setText(
+                "Stai ascoltando Playlist: " + playlistCorrente.getName()
+        );
         trackTable.setItems(playlistAttuale.getTracks());
 
         showSkipPlaylistButton();
         clearTrackInputs();
 
-        if (playlistAttuale.getTracks().isEmpty()) {
+        if (playlistCorrente.getTracks().isEmpty()) {
             audioPlayerService.stop();
             hideSkipButton();
             setPlayButtonState();
@@ -323,9 +327,12 @@ public class MusicPlayerController implements PlaybackObserver {
             return;
         }
 
-        Track primaTraccia = playlistAttuale.getTracks().get(0);
+        Track primaTraccia = playlistCorrente.getTracks().get(0);
 
-        audioPlayerService.playTrack(primaTraccia, playlistAttuale.getTracks());
+        audioPlayerService.playTrack(
+                primaTraccia,
+                playlistCorrente.getTracks()
+        );
         setPauseButtonState();
         showSkipButton();
     }
@@ -348,6 +355,7 @@ public class MusicPlayerController implements PlaybackObserver {
         }
 
         audioPlayerService.stop();
+        playlistCorrente = null;
         hideSkipButton();
         setPlayButtonState();
 
@@ -508,6 +516,9 @@ public class MusicPlayerController implements PlaybackObserver {
 
         if (playlistAttuale == playlistSelezionata) {
             onViewAllTracksClick();
+        }
+        if (playlistSelezionata == playlistCorrente) {
+            playlistCorrente = null;
         }
     }
 
