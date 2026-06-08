@@ -120,14 +120,15 @@ public class AudioPlayerService {
             return;
         }
 
-        long durataTotale = tracciaAttuale.getLength().getSeconds();
-
         timeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
             secondiTrascorsi++;
 
             notifyTimeUpdate();
 
-            if (secondiTrascorsi >= durataTotale) {
+
+            long durataDinamicaAggiornata = tracciaAttuale.getLength().getSeconds();
+
+            if (secondiTrascorsi >= durataDinamicaAggiornata) {
                 playNextTrack();
             }
         }));
