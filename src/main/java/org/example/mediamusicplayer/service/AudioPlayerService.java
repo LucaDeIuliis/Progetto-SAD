@@ -18,7 +18,7 @@ public class AudioPlayerService {
     private List<Track> playlistCorrente;
     private int secondiTrascorsi = 0;
     private Timeline timeline;
-    private int currentIndex = 0; // memorizza l'indice della traccia in riproduzione
+
     private PlaybackStrategy playbackStrategy;
 
     // Callbacks per comunicare con il Controller e aggiornare l'interfaccia
@@ -56,31 +56,18 @@ public class AudioPlayerService {
         return tracciaAttuale;
     }
 
-    public int getCurrentIndex() {
-        return currentIndex;
-    }
-
     public void playTrack(Track track) {
         playTrack(track, null);
     }
 
-    public void playTrack(Track track, List<Track> tracks) {
+    // Questo serve perché lo Strategy Pattern deve conoscere la lista da cui scegliere la prossima traccia.
 
-        stopTimelineOnly();
+    public void playTrack(Track track, List<Track> tracks) {
+        stop();
 
         this.tracciaAttuale = track;
         this.playlistCorrente = tracks;
         this.secondiTrascorsi = 0;
-
-        if (tracks != null) {
-            this.currentIndex = tracks.indexOf(track);
-
-            if (this.currentIndex < 0) {
-                this.currentIndex = 0;
-            }
-        } else {
-            this.currentIndex = 0;
-        }
 
         startTimelineForCurrentTrack();
 
@@ -128,7 +115,6 @@ public class AudioPlayerService {
         if (prossimaTraccia == null) {
             tracciaAttuale = null;
             secondiTrascorsi = 0;
-            currentIndex = 0;
 
             if (onTimeUpdate != null) {
                 onTimeUpdate.run();
@@ -143,10 +129,6 @@ public class AudioPlayerService {
 
         tracciaAttuale = prossimaTraccia;
         secondiTrascorsi = 0;
-
-        if (playlistCorrente != null) {
-            currentIndex = playlistCorrente.indexOf(prossimaTraccia);
-        }
 
         startTimelineForCurrentTrack();
 
@@ -175,7 +157,6 @@ public class AudioPlayerService {
         stopTimelineOnly();
         tracciaAttuale = null;
         secondiTrascorsi = 0;
-        currentIndex = 0;
 
         if (onTimeUpdate != null) {
             onTimeUpdate.run();
@@ -185,27 +166,6 @@ public class AudioPlayerService {
     private void stopTimelineOnly() {
         if (timeline != null) {
             timeline.stop();
-        }
-    }
-
-    // US-14: aggiorna dinamicamente la coda attiva senza interrompere la riproduzione.
-    public void updateCurrentPlaylistQueue(List<Track> updatedPlaylist) {
-
-        if (updatedPlaylist == null || updatedPlaylist.isEmpty()) {
-            return;
-        }
-
-        Track currentTrack = this.tracciaAttuale;
-
-        this.playlistCorrente = updatedPlaylist;
-
-        if (currentTrack != null) {
-
-            int newIndex = updatedPlaylist.indexOf(currentTrack);
-
-            if (newIndex >= 0) {
-                this.currentIndex = newIndex;
-            }
         }
     }
 
