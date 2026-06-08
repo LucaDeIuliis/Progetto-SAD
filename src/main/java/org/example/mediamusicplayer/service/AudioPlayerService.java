@@ -60,8 +60,6 @@ public class AudioPlayerService {
         playTrack(track, null);
     }
 
-    // Questo serve perché lo Strategy Pattern deve conoscere la lista da cui scegliere la prossima traccia.
-
     public void playTrack(Track track, List<Track> tracks) {
         stop();
 
@@ -85,8 +83,6 @@ public class AudioPlayerService {
             return;
         }
 
-        long durataTotale = tracciaAttuale.getLength().getSeconds();
-
         timeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
             secondiTrascorsi++;
 
@@ -94,7 +90,12 @@ public class AudioPlayerService {
                 onTimeUpdate.run();
             }
 
-            if (secondiTrascorsi >= durataTotale) {
+            // === FIX BUG: LETTURA DINAMICA DELLA DURATA ===
+            // Invece di usare una variabile fissa calcolata all'inizio del Play,
+            // chiediamo alla traccia la sua durata attuale in tempo reale!
+            long durataDinamicaAggiornata = tracciaAttuale.getLength().getSeconds();
+
+            if (secondiTrascorsi >= durataDinamicaAggiornata) {
                 playNextTrack();
             }
         }));
