@@ -122,6 +122,37 @@ import java.util.Optional;
                 }
             });
 
+            // DOPPIO CLICK SULLA PLAYLIST PER RIPRODURRE
+
+            playlistListView.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2) {
+                    Playlist playlistSelezionata = playlistListView.getSelectionModel().getSelectedItem();
+                    if (playlistSelezionata == null) {
+                        return;
+                    }
+                    playlistAttuale = playlistSelezionata;
+                    currentPlaylistLabel.setText("Stai ascoltando Playlist: " + playlistAttuale.getName());
+                    trackTable.setItems(playlistAttuale.getTracks());
+                    showSkipPlaylistButton();
+                    clearTrackInputs();
+                    if (playlistAttuale.getTracks().isEmpty()) {
+                        audioPlayerService.stop();
+                        hideSkipButton();
+                        setPlayButtonState();
+                        timeLabel.setText("0:00 / 0:00");
+                        AlertUtil.showInfo(
+                                "Playlist vuota",
+                                "La playlist selezionata non contiene tracce da riprodurre."
+                        );
+                        return;
+                    }
+                    Track primaTraccia = playlistAttuale.getTracks().get(0);
+                    audioPlayerService.playTrack(primaTraccia, playlistAttuale.getTracks());
+                    setPauseButtonState();
+                    showSkipButton();
+                }
+            });
+
             // ASCOLTATORE SELEZIONE SINGOLA
             // Riempie i campi, ma non disturba la musica.
             trackTable.getSelectionModel().selectedItemProperty().addListener((obs, vecchia, nuova) -> {
