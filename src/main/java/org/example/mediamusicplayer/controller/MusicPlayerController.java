@@ -256,15 +256,62 @@ import java.util.Optional;
             Track tracciaSelezionata = trackTable.getSelectionModel().getSelectedItem();
             Track tracciaCorrente = audioPlayerService.getCurrentTrack();
 
-            if (tracciaSelezionata == null && tracciaCorrente == null) {
-                AlertUtil.showError("Nessuna traccia", "Seleziona prima una traccia dalla tabella per riprodurla.");
+            /*
+             * Caso 1:
+             * Se una traccia è già in riproduzione, il bottone PLAY/PAUSA
+             * deve continuare a comportarsi come controllo audio.
+             */
+            if (tracciaCorrente != null && tracciaSelezionata == null) {
+                if (audioPlayerService.isPlaying()) {
+                    audioPlayerService.pause();
+                    setPlayButtonState();
+                } else if (audioPlayerService.isPaused()) {
+                    audioPlayerService.resume();
+                    setPauseButtonState();
+                }
                 return;
             }
 
-            if (tracciaSelezionata == null) {
-                tracciaSelezionata = tracciaCorrente;
+            /*
+             * Caso 2:
+             * Siamo dentro una playlist, ma non è stata selezionata una traccia.
+             * In questo caso PLAY deve avviare la playlist dalla prima traccia.
+             */
+            if (playlistAttuale != null && tracciaSelezionata == null) {
+                if (playlistAttuale.getTracks().isEmpty()) {
+                    AlertUtil.showError(
+                            "Playlist vuota",
+                            "La playlist selezionata non contiene tracce da riprodurre."
+                    );
+                    return;
+                }
+
+                Track primaTraccia = playlistAttuale.getTracks().get(0);
+
+                audioPlayerService.playTrack(primaTraccia, playlistAttuale.getTracks());
+                setPauseButtonState();
+                showSkipButton();
+                return;
             }
 
+            /*
+             * Caso 3:
+             * Non siamo dentro una playlist e non è stata selezionata nessuna traccia.
+             * Qui manteniamo il comportamento precedente.
+             */
+            if (tracciaSelezionata == null) {
+                AlertUtil.showError(
+                        "Nessuna traccia",
+                        "Seleziona prima una traccia dalla tabella per riprodurla."
+                );
+                return;
+            }
+
+            /*
+             * Caso 4:
+             * È stata selezionata una traccia diversa da quella corrente.
+             * La riproduciamo.
+             */
             if (!tracciaSelezionata.equals(tracciaCorrente)) {
                 audioPlayerService.playTrack(tracciaSelezionata, getCurrentTrackList());
                 setPauseButtonState();
@@ -272,6 +319,11 @@ import java.util.Optional;
                 return;
             }
 
+            /*
+             * Caso 5:
+             * È selezionata la traccia già corrente.
+             * Il bottone funziona come PLAY/PAUSA.
+             */
             if (audioPlayerService.isPlaying()) {
                 audioPlayerService.pause();
                 setPlayButtonState();
@@ -284,7 +336,6 @@ import java.util.Optional;
                 showSkipButton();
             }
         }
-
         // === SKIP ORA È TOTALMENTE SGANCIATO DALLA TABELLA ===
         @FXML
         public void onSkipClick() {
