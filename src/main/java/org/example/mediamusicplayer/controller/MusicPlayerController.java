@@ -54,7 +54,19 @@ import java.util.Optional;
         @FXML private TextField yearInput;
 
         private MusicLibrary libreria;
+
+        /*
+         * Playlist attualmente selezionata nella ListView.
+         * Serve per mostrare le tracce nel catalogo.
+         */
         private Playlist playlistAttuale;
+
+        /*
+         * Playlist attualmente in riproduzione.
+         * Serve per sapere su quale playlist devono agire PLAY, SKIP PLAYLIST
+         * e la label "Stai ascoltando Playlist...".
+         */
+        private Playlist playlistInRiproduzione;
 
         private TrackService trackService;
         private PlaylistService playlistService;
@@ -115,10 +127,11 @@ import java.util.Optional;
             playlistListView.getSelectionModel().selectedItemProperty().addListener((obs, vecchia, nuova) -> {
                 if (nuova != null) {
                     playlistAttuale = nuova;
-                    currentPlaylistLabel.setText("Stai ascoltando Playlist: " + playlistAttuale.getName());
                     trackTable.setItems(playlistAttuale.getTracks());
                     showSkipPlaylistButton();
                     clearTrackInputs();
+
+                    updateCurrentPlaylistLabel();
                 }
             });
 
@@ -147,6 +160,10 @@ import java.util.Optional;
                         return;
                     }
                     Track primaTraccia = playlistAttuale.getTracks().get(0);
+
+                    playlistInRiproduzione = playlistAttuale;
+                    currentPlaylistLabel.setText("Stai ascoltando Playlist: " + playlistInRiproduzione.getName());
+
                     audioPlayerService.playTrack(primaTraccia, playlistAttuale.getTracks());
                     setPauseButtonState();
                     showSkipButton();
@@ -187,6 +204,16 @@ import java.util.Optional;
 
         private java.util.List<Track> getCurrentTrackList() {
             return trackTable.getItems();
+        }
+
+        private void updateCurrentPlaylistLabel() {
+            if (playlistInRiproduzione != null) {
+                currentPlaylistLabel.setText("Stai ascoltando Playlist: " + playlistInRiproduzione.getName());
+            } else if (playlistAttuale != null) {
+                currentPlaylistLabel.setText("Playlist selezionata: " + playlistAttuale.getName());
+            } else {
+                currentPlaylistLabel.setText("Gestione Tracce: Tutte le canzoni");
+            }
         }
 
         private void setPlayButtonState() {
@@ -285,8 +312,10 @@ import java.util.Optional;
                     );
                     return;
                 }
-
                 Track primaTraccia = playlistAttuale.getTracks().get(0);
+
+                playlistInRiproduzione = playlistAttuale;
+                currentPlaylistLabel.setText("Stai ascoltando Playlist: " + playlistInRiproduzione.getName());
 
                 audioPlayerService.playTrack(primaTraccia, playlistAttuale.getTracks());
                 setPauseButtonState();
@@ -346,10 +375,14 @@ import java.util.Optional;
 
         @FXML
         public void onSkipPlaylistClick() {
-            if (playlistAttuale == null) {
+            /*
+             * Lo skip playlist deve agire sulla playlist attualmente in riproduzione,
+             * non sulla playlist semplicemente selezionata nella ListView.
+             */
+            if (playlistInRiproduzione == null) {
                 AlertUtil.showError(
-                        "Nessuna playlist attiva",
-                        "Lo skip playlist è disponibile solo quando ti trovi dentro una playlist."
+                        "Nessuna playlist in riproduzione",
+                        "Avvia prima una playlist per poter usare lo skip playlist."
                 );
                 return;
             }
@@ -368,35 +401,44 @@ import java.util.Optional;
                     PlaylistNavigationStrategyFactory.create(selectedMode);
 
             Playlist prossimaPlaylist =
-                    strategy.getNextPlaylist(libreria.getPlaylists(), playlistAttuale);
+                    strategy.getNextPlaylist(libreria.getPlaylists(), playlistInRiproduzione);
 
             if (prossimaPlaylist == null) {
                 audioPlayerService.stop();
+                playlistInRiproduzione = null;
+
                 hideSkipButton();
                 setPlayButtonState();
                 timeLabel.setText("0:00 / 0:00");
 
+                updateCurrentPlaylistLabel();
+
                 AlertUtil.showInfo(
                         "Fine playlist",
-                        "Non ci sono altre playlist da riprodurre in modalità sequenziale."
+                        "Non ci sono altre playlist da riprodurre."
                 );
                 return;
             }
 
+            playlistInRiproduzione = prossimaPlaylist;
             playlistAttuale = prossimaPlaylist;
 
             playlistListView.getSelectionModel().select(prossimaPlaylist);
-            currentPlaylistLabel.setText("Stai ascoltando Playlist: " + playlistAttuale.getName());
-            trackTable.setItems(playlistAttuale.getTracks());
+            trackTable.setItems(prossimaPlaylist.getTracks());
 
             showSkipPlaylistButton();
             clearTrackInputs();
+            updateCurrentPlaylistLabel();
 
-            if (playlistAttuale.getTracks().isEmpty()) {
+            if (playlistInRiproduzione.getTracks().isEmpty()) {
                 audioPlayerService.stop();
+                playlistInRiproduzione = null;
+
                 hideSkipButton();
                 setPlayButtonState();
                 timeLabel.setText("0:00 / 0:00");
+
+                updateCurrentPlaylistLabel();
 
                 AlertUtil.showInfo(
                         "Playlist vuota",
@@ -405,11 +447,12 @@ import java.util.Optional;
                 return;
             }
 
-            Track primaTraccia = playlistAttuale.getTracks().get(0);
+            Track primaTraccia = playlistInRiproduzione.getTracks().get(0);
 
-            audioPlayerService.playTrack(primaTraccia, playlistAttuale.getTracks());
+            audioPlayerService.playTrack(primaTraccia, playlistInRiproduzione.getTracks());
             setPauseButtonState();
             showSkipButton();
+            updateCurrentPlaylistLabel();
         }
 
         private void showSkipPlaylistButton() {
