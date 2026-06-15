@@ -34,12 +34,13 @@ public class MusicPlayerController implements PlaybackObserver {
     @FXML private TextField newPlaylistInput;
     @FXML private Label currentPlaylistLabel;
     @FXML private ComboBox<Playlist> playlistComboBox;
+    @FXML private ComboBox<PlaybackMode> playbackModeComboBox;
+    @FXML private ComboBox<String> autoPlaylistTypeComboBox;
 
     @FXML private Button playPauseButton;
     @FXML private Button skipButton;
     @FXML private Button skipPlaylistButton;
     @FXML private Label timeLabel;
-    @FXML private ComboBox<PlaybackMode> playbackModeComboBox;
 
     @FXML private TableView<Track> trackTable;
     @FXML private TableColumn<Track, String> titleColumn;
@@ -53,6 +54,7 @@ public class MusicPlayerController implements PlaybackObserver {
     @FXML private TextField lengthInput;
     @FXML private TextField genreInput;
     @FXML private TextField yearInput;
+    @FXML private TextField autoPlaylistFilterInput;
 
     private MusicLibrary libreria;
     private Playlist playlistAttuale;
@@ -83,7 +85,12 @@ public class MusicPlayerController implements PlaybackObserver {
                 audioPlayerService.setPlaybackMode(newMode);
             }
         });
+        autoPlaylistTypeComboBox.getItems().setAll(
+                "Genere",
+                "Anno"
+        );
 
+        autoPlaylistTypeComboBox.setValue("Genere");
         titleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
         authorColumn.setCellValueFactory(new PropertyValueFactory<>("author"));
         genreColumn.setCellValueFactory(new PropertyValueFactory<>("genre"));
@@ -571,5 +578,104 @@ public class MusicPlayerController implements PlaybackObserver {
         }
 
         clearTrackInputs();
+    }
+    @FXML
+    public void onCreateAutomaticPlaylistClick() {
+
+        String filtro = autoPlaylistFilterInput.getText().trim();
+        String tipo = autoPlaylistTypeComboBox.getValue();
+
+        if (filtro.isEmpty()) {
+            AlertUtil.showError(
+                    "Filtro mancante",
+                    "Inserisci un genere o un anno."
+            );
+            return;
+        }
+
+
+        java.util.List<Track> tracceTrovate =
+                new java.util.ArrayList<>();
+
+
+        for (Track track : libreria.getAllTracks()) {
+
+            if (tipo.equals("Genere")) {
+
+                if (track.getGenre()
+                        .equalsIgnoreCase(filtro)) {
+
+                    tracceTrovate.add(track);
+                }
+
+            } else if (tipo.equals("Anno")) {
+
+                if (String.valueOf(track.getYear().getValue())
+                        .equals(filtro)) {
+
+                    tracceTrovate.add(track);
+                }
+            }
+        }
+
+
+        if (tracceTrovate.isEmpty()) {
+
+            AlertUtil.showInfo(
+                    "Nessun risultato",
+                    "Non sono state trovate tracce compatibili."
+            );
+
+            return;
+        }
+
+
+        try {
+
+            String nomePlaylist =
+                    "Auto - " + tipo + " " + filtro;
+
+
+            Playlist nuovaPlaylist =
+                    playlistService.createPlaylist(
+                            nomePlaylist,
+                            libreria
+                    );
+
+
+            libraryService.addPlaylist(
+                    libreria,
+                    nuovaPlaylist
+            );
+
+
+            for (Track t : tracceTrovate) {
+
+                playlistService.addTrackToPlaylist(
+                        nuovaPlaylist,
+                        t
+                );
+            }
+
+
+            playlistListView.getSelectionModel()
+                    .select(nuovaPlaylist);
+
+
+            AlertUtil.showInfo(
+                    "Playlist creata",
+                    "Aggiunte " +
+                            tracceTrovate.size() +
+                            " tracce alla playlist."
+            );
+
+
+        } catch (PlaylistValidationException e) {
+
+            AlertUtil.showError(
+                    e.getHeader(),
+                    e.getMessage()
+            );
+        }
     }
 }

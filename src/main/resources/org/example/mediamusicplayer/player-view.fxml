@@ -22,7 +22,30 @@
             </padding>
 
             <Button text="🎵 Gestione Tutte le Tracce" onAction="#onViewAllTracksClick" maxWidth="Infinity" style="-fx-font-weight: bold; -fx-background-color: #e0e0e0;" />
+            <VBox spacing="8.0"
+                  style="-fx-padding: 10; -fx-background-color: #eeeeee; -fx-background-radius: 8;">
 
+                <Label text="PLAYLIST AUTOMATICA"
+                       style="-fx-font-weight: bold; -fx-font-size: 13px;" />
+
+
+                <ComboBox fx:id="autoPlaylistTypeComboBox"
+                          promptText="Filtra per..."
+                          prefWidth="190.0"/>
+
+
+                <TextField fx:id="autoPlaylistFilterInput"
+                           promptText="Genere o anno..."
+                           prefWidth="190.0"/>
+
+
+                <Button fx:id="createAutoPlaylistButton"
+                        text="✨ Crea Playlist"
+                        onAction="#onCreateAutomaticPlaylistClick"
+                        maxWidth="Infinity"
+                        style="-fx-background-color: #9C27B0; -fx-text-fill: white; -fx-font-weight: bold;" />
+
+            </VBox>
             <Label text="LE TUE PLAYLIST" style="-fx-font-weight: bold; -fx-font-size: 14px;" />
             <ListView fx:id="playlistListView" VBox.vgrow="ALWAYS" />
 
