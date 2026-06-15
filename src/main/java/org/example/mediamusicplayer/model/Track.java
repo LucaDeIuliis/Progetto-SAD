@@ -2,6 +2,9 @@ package org.example.mediamusicplayer.model;
 
 import java.time.Duration;
 import java.time.Year;
+import java.util.EnumSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Track {
 
@@ -11,6 +14,9 @@ public class Track {
     private String genre;
     private Year year;
 
+    // NUOVO: Insieme di tag visuali (senza duplicati)
+    private Set<TrackTag> tags;
+
     // Costruttore
     public Track(String title, String author, Duration length, String genre, Year year) {
         this.title = title;
@@ -18,6 +24,9 @@ public class Track {
         this.length = length;
         this.genre = genre;
         this.year = year;
+
+        // NUOVO: Inizializza l'insieme dei tag come vuoto e ottimizzato per gli Enum
+        this.tags = EnumSet.noneOf(TrackTag.class);
     }
 
     // --- GETTERS E SETTERS ---
@@ -35,6 +44,32 @@ public class Track {
 
     public Year getYear() { return year; }
     public void setYear(Year year) { this.year = year; }
+
+    // === GESTIONE DEI TAG VISUALI ===
+
+    public Set<TrackTag> getTags() {
+        return tags;
+    }
+
+    public void addTag(TrackTag tag) {
+        this.tags.add(tag);
+    }
+
+    public void removeTag(TrackTag tag) {
+        this.tags.remove(tag);
+    }
+
+    /* * METODO PER LA TABELLA JAVAFX
+     * Trasforma l'insieme di tag (es. [FAVOURITE, EXPLICIT])
+     * in una stringa di emoji (es. "❤️ 🔞") pronta per lo schermo.
+     */
+    public String getVisualTags() {
+        if (tags == null || tags.isEmpty()) return "";
+
+        return tags.stream()
+                .map(TrackTag::getSymbol)
+                .collect(Collectors.joining(" "));
+    }
 
     // --- METODO PER LA GRAFICA (JavaFX) ---
     // Guarda quanto è più pulito adesso grazie a Duration!

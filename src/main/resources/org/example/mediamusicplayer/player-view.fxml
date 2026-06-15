@@ -2,6 +2,7 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
@@ -28,16 +29,13 @@
                 <Label text="PLAYLIST AUTOMATICA"
                        style="-fx-font-weight: bold; -fx-font-size: 13px;" />
 
-
                 <ComboBox fx:id="autoPlaylistTypeComboBox"
                           promptText="Filtra per..."
                           prefWidth="190.0"/>
 
-
                 <TextField fx:id="autoPlaylistFilterInput"
                            promptText="Genere o anno..."
                            prefWidth="190.0"/>
-
 
                 <Button fx:id="createAutoPlaylistButton"
                         text="✨ Crea Playlist"
@@ -103,6 +101,8 @@
                     <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
                 </columnResizePolicy>
                 <columns>
+                    <TableColumn fx:id="tagsColumn" text="Tag" prefWidth="60.0" />
+
                     <TableColumn fx:id="titleColumn" text="Titolo" prefWidth="100.0" />
                     <TableColumn fx:id="authorColumn" text="Autore" prefWidth="100.0" />
                     <TableColumn fx:id="lengthColumn" text="Durata" prefWidth="100.0" />
@@ -117,6 +117,13 @@
                 <TextField fx:id="lengthInput" promptText="Durata (es. 3:45)" prefWidth="110.0" />
                 <TextField fx:id="genreInput" promptText="Genere" prefWidth="110.0" />
                 <TextField fx:id="yearInput" promptText="Anno" prefWidth="70.0" />
+            </HBox>
+
+            <HBox alignment="CENTER" spacing="15.0">
+                <Label text="Assegna Tag:" style="-fx-font-weight: bold;" />
+                <CheckBox fx:id="favCheck" text="❤ Preferito" />
+                <CheckBox fx:id="explicitCheck" text="🔞 Esplicito" />
+                <CheckBox fx:id="newReleaseCheck" text="✨ Nuova Uscita" />
             </HBox>
 
             <HBox alignment="CENTER" spacing="10.0">

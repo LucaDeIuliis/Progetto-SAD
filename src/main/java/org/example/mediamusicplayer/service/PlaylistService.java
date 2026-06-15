@@ -4,6 +4,7 @@ import org.example.mediamusicplayer.exception.PlaylistValidationException;
 import org.example.mediamusicplayer.model.MusicLibrary;
 import org.example.mediamusicplayer.model.Playlist;
 import org.example.mediamusicplayer.model.Track;
+import org.example.mediamusicplayer.model.TrackTag;
 
 public class PlaylistService {
 
@@ -88,6 +89,42 @@ public class PlaylistService {
 
         playlist.addTrack(track);
     }
+
+    // =========================================================
+    // LOGICA DI BUSINESS: SMART PLAYLIST AUTO-SYNC
+    // =========================================================
+    public void syncSmartPlaylists(MusicLibrary library, MusicLibraryService libraryService) {
+        for (TrackTag tag : TrackTag.values()) {
+            String nomeBase = switch (tag) {
+                case FAVOURITE -> "I Miei Preferiti";
+                case EXPLICIT -> "Brani Espliciti";
+                case NEW_RELEASE -> "Nuove Uscite";
+            };
+            String nomeCompleto = nomeBase + " " + tag.getSymbol();
+
+            // 1. Filtra le tracce
+            java.util.List<Track> tracceTaggate = library.getAllTracks().stream()
+                    .filter(track -> track.getTags().contains(tag))
+                    .toList();
+
+            // 2. Cerca la playlist
+            Playlist playlistEsistente = library.getPlaylists().stream()
+                    .filter(p -> p.getName().equals(nomeCompleto))
+                    .findFirst()
+                    .orElse(null);
+
+            // 3. Aggiorna o Crea
+            if (playlistEsistente != null) {
+                playlistEsistente.getTracks().clear();
+                playlistEsistente.getTracks().addAll(tracceTaggate);
+            } else if (!tracceTaggate.isEmpty()) {
+                Playlist nuovaAuto = new Playlist(nomeCompleto);
+                nuovaAuto.getTracks().addAll(tracceTaggate);
+                libraryService.addPlaylist(library, nuovaAuto);
+            }
+        }
+    }
+
 
     // --- RIMOZIONE TRACCIA DA PLAYLIST ---
     public void removeTrackFromPlaylist(Playlist playlist, Track track) {
