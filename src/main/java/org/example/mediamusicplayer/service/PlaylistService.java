@@ -64,7 +64,11 @@ public class PlaylistService {
     }
 
     // --- AGGIUNTA TRACCIA A PLAYLIST ---
-    public void addTrackToPlaylist(Playlist playlist, Track track) {
+    public void addTrackToPlaylist(
+            Playlist playlist,
+            Track track
+    ) {
+
 
         if (playlist == null) {
             throw new PlaylistValidationException(
@@ -73,6 +77,7 @@ public class PlaylistService {
             );
         }
 
+
         if (track == null) {
             throw new PlaylistValidationException(
                     "Nessuna Traccia",
@@ -80,12 +85,24 @@ public class PlaylistService {
             );
         }
 
+
+        if (!trackRispettaFiltro(playlist, track)) {
+
+            throw new PlaylistValidationException(
+                    "Filtro non rispettato",
+                    "La traccia non soddisfa i criteri della playlist automatica."
+            );
+        }
+
+
         if (playlist.getTracks().contains(track)) {
+
             throw new PlaylistValidationException(
                     "Già presente",
                     "Questa traccia è già presente nella playlist."
             );
         }
+
 
         playlist.addTrack(track);
     }
@@ -93,38 +110,6 @@ public class PlaylistService {
     // =========================================================
     // LOGICA DI BUSINESS: SMART PLAYLIST AUTO-SYNC
     // =========================================================
-    public void syncSmartPlaylists(MusicLibrary library, MusicLibraryService libraryService) {
-        for (TrackTag tag : TrackTag.values()) {
-            String nomeBase = switch (tag) {
-                case FAVOURITE -> "I Miei Preferiti";
-                case EXPLICIT -> "Brani Espliciti";
-                case NEW_RELEASE -> "Nuove Uscite";
-            };
-            String nomeCompleto = nomeBase + " " + tag.getSymbol();
-
-            // 1. Filtra le tracce
-            java.util.List<Track> tracceTaggate = library.getAllTracks().stream()
-                    .filter(track -> track.getTags().contains(tag))
-                    .toList();
-
-            // 2. Cerca la playlist
-            Playlist playlistEsistente = library.getPlaylists().stream()
-                    .filter(p -> p.getName().equals(nomeCompleto))
-                    .findFirst()
-                    .orElse(null);
-
-            // 3. Aggiorna o Crea
-            if (playlistEsistente != null) {
-                playlistEsistente.getTracks().clear();
-                playlistEsistente.getTracks().addAll(tracceTaggate);
-            } else if (!tracceTaggate.isEmpty()) {
-                Playlist nuovaAuto = new Playlist(nomeCompleto);
-                nuovaAuto.getTracks().addAll(tracceTaggate);
-                libraryService.addPlaylist(library, nuovaAuto);
-            }
-        }
-    }
-
 
     // --- RIMOZIONE TRACCIA DA PLAYLIST ---
     public void removeTrackFromPlaylist(Playlist playlist, Track track) {
@@ -151,5 +136,146 @@ public class PlaylistService {
         }
 
         playlist.removeTrack(track);
+    }
+
+
+    public boolean trackRispettaFiltro(Playlist playlist, Track track) {
+
+        if (!playlist.isGenerataAutomaticamente()) {
+                return true;
+        }
+
+
+        if (playlist.getTipoFiltro() == null ||
+                    playlist.getFiltroAutomatico() == null) {
+                return true;
+        }
+
+
+        switch (playlist.getTipoFiltro()) {
+
+                case "Genere":
+                    return track.getGenre()
+                            .equalsIgnoreCase(
+                                    playlist.getFiltroAutomatico()
+                            );
+
+
+                case "Anno":
+                    return String.valueOf(
+                            track.getYear().getValue()
+                    ).equals(
+                            playlist.getFiltroAutomatico()
+                    );
+
+
+                default:
+                    return true;
+            }
+        }
+    public void syncTrackWithAutomaticPlaylists(
+            Track track,
+            MusicLibrary library
+    ) {
+
+
+        for (Playlist playlist :
+                library.getPlaylists()) {
+
+
+            if (!playlist.isGenerataAutomaticamente())
+                continue;
+
+
+            // prima rimuovo
+            playlist.removeTrack(track);
+
+
+
+            // poi eventualmente aggiungo
+            if(trackRispettaFiltro(playlist, track)) {
+
+                playlist.addTrack(track);
+
+            }
+        }
+    }
+    public void syncSmartPlaylists(
+            MusicLibrary library,
+            MusicLibraryService libraryService
+    ) {
+
+        for (TrackTag tag : TrackTag.values()) {
+
+            String nomeBase = switch (tag) {
+                case FAVOURITE -> "I Miei Preferiti";
+                case EXPLICIT -> "Brani Espliciti";
+                case NEW_RELEASE -> "Nuove Uscite";
+            };
+
+            String nomeCompleto = nomeBase + " " + tag.getSymbol();
+
+
+            java.util.List<Track> tracceTaggate =
+                    library.getAllTracks()
+                            .stream()
+                            .filter(track ->
+                                    track.getTags().contains(tag)
+                            )
+                            .toList();
+
+
+            Playlist playlistEsistente =
+                    library.getPlaylists()
+                            .stream()
+                            .filter(p ->
+                                    p.getName().equals(nomeCompleto)
+                            )
+                            .findFirst()
+                            .orElse(null);
+
+
+
+            if (playlistEsistente != null) {
+
+                // aggiorno le tracce
+                playlistEsistente.getTracks().clear();
+
+                playlistEsistente.getTracks()
+                        .addAll(tracceTaggate);
+
+
+                // NUOVO: se la Smart Playlist è vuota la elimino
+                if (playlistEsistente.getTracks().isEmpty()) {
+
+                    libraryService.deletePlaylist(
+                            library,
+                            playlistEsistente
+                    );
+                }
+
+
+            } else if (!tracceTaggate.isEmpty()) {
+
+
+                Playlist nuovaAuto =
+                        new Playlist(nomeCompleto);
+
+
+                nuovaAuto.setGenerataAutomaticamente(true);
+                nuovaAuto.setTipoFiltro(null);
+                nuovaAuto.setFiltroAutomatico(null);
+
+
+                nuovaAuto.getTracks()
+                        .addAll(tracceTaggate);
+
+
+                libraryService.addPlaylist(
+                        library,
+                        nuovaAuto
+                );
+            }
+        }
     }
 }

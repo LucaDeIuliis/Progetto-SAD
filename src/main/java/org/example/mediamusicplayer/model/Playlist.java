@@ -4,21 +4,81 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 public class Playlist {
+
     private String name;
     private ObservableList<Track> tracks;
+
+    private boolean generataAutomaticamente;
+
+    // "Genere" oppure "Anno"
+    private String tipoFiltro;
+
+    // es. "Rock" oppure "2024"
+    private String filtroAutomatico;
+
 
     public Playlist(String name) {
         this.name = name;
         this.tracks = FXCollections.observableArrayList();
+
+        this.generataAutomaticamente = false;
     }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
 
-    public ObservableList<Track> getTracks() { return tracks; }
+    public String getName() {
+        return name;
+    }
 
-    public void addTrack(Track track) { this.tracks.add(track); }
-    public void removeTrack(Track track) { this.tracks.remove(track); }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+
+    public ObservableList<Track> getTracks() {
+        return tracks;
+    }
+
+
+    public void addTrack(Track track) {
+        this.tracks.add(track);
+    }
+
+
+    public void removeTrack(Track track) {
+        this.tracks.remove(track);
+    }
+
+
+    public boolean isGenerataAutomaticamente() {
+        return generataAutomaticamente;
+    }
+
+
+    public void setGenerataAutomaticamente(boolean valore) {
+        this.generataAutomaticamente = valore;
+    }
+
+
+    public String getTipoFiltro() {
+        return tipoFiltro;
+    }
+
+
+    public void setTipoFiltro(String tipoFiltro) {
+        this.tipoFiltro = tipoFiltro;
+    }
+
+
+    public String getFiltroAutomatico() {
+        return filtroAutomatico;
+    }
+
+
+    public void setFiltroAutomatico(String filtroAutomatico) {
+        this.filtroAutomatico = filtroAutomatico;
+    }
+
 
     @Override
     public String toString() {
