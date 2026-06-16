@@ -1,5 +1,7 @@
 package org.example.mediamusicplayer.controller;
 
+import org.example.mediamusicplayer.persistence.DatabaseInitializer;
+import org.example.mediamusicplayer.persistence.DatabaseManager;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -36,9 +38,12 @@ import org.example.mediamusicplayer.exception.TrackValidationException;
 import org.example.mediamusicplayer.exception.PlaylistValidationException;
 import org.example.mediamusicplayer.service.playback.PlaybackMode;
 import org.example.mediamusicplayer.service.playback.PlaybackObserver;
-
+import org.example.mediamusicplayer.repository.TrackRepository;
+import org.example.mediamusicplayer.repository.PlaylistRepository;
+import org.example.mediamusicplayer.repository.MusicLibraryRepository;
 import java.time.Year;
 import java.util.Optional;
+import org.example.mediamusicplayer.service.persistence.PersistenceService;
 
 public class MusicPlayerController implements PlaybackObserver {
 
@@ -82,6 +87,12 @@ public class MusicPlayerController implements PlaybackObserver {
     private MusicLibraryService libraryService;
     private AudioPlayerService audioPlayerService;
     private PlaybackStatisticsService playbackStatisticsService;
+    private DatabaseManager databaseManager;
+    private DatabaseInitializer databaseInitializer;
+    private TrackRepository trackRepository;
+    private PlaylistRepository playlistRepository;
+    private MusicLibraryRepository musicLibraryRepository;
+    private PersistenceService persistenceService;
 
     // === GESTORE COMANDI PER UNDO ===
     private CommandManager commandManager;
@@ -93,6 +104,15 @@ public class MusicPlayerController implements PlaybackObserver {
         libraryService = new MusicLibraryService();
         audioPlayerService = new AudioPlayerService();
         playbackStatisticsService = new PlaybackStatisticsService();
+
+        databaseManager = new DatabaseManager();
+        databaseInitializer = new DatabaseInitializer(databaseManager);
+        databaseInitializer.initializeDatabase();
+
+        trackRepository = new TrackRepository(databaseManager);
+        playlistRepository = new PlaylistRepository(databaseManager);
+        musicLibraryRepository = new MusicLibraryRepository(trackRepository, playlistRepository);
+        persistenceService = new PersistenceService(musicLibraryRepository, trackRepository, playlistRepository);
         libreria = new MusicLibrary();
         commandManager = new CommandManager();
 
@@ -201,6 +221,7 @@ public class MusicPlayerController implements PlaybackObserver {
         if (commandManager.undoLastCommand()) {
             syncSmartPlaylists();
             refreshTableUI();
+            saveLibraryAsync();
             AlertUtil.showInfo("Annullato", "L'ultima operazione è stata annullata con successo!");
         } else {
             AlertUtil.showInfo("Nessuna azione", "Non ci sono operazioni recenti da annullare.");
@@ -360,6 +381,14 @@ public class MusicPlayerController implements PlaybackObserver {
     private void hideSkipButton() {
         skipButton.setVisible(false);
         skipButton.setManaged(false);
+    }
+
+    private void saveLibraryAsync() {
+        if (persistenceService == null || libreria == null) {
+            return;
+        }
+
+        persistenceService.saveLibraryAsync(libreria);
     }
 
     @Override
@@ -627,6 +656,7 @@ public class MusicPlayerController implements PlaybackObserver {
             playlistListView.getSelectionModel().select(nuovaPlaylist);
 
             commandManager.clearHistory();
+            saveLibraryAsync();
         } catch (PlaylistValidationException e) {
             AlertUtil.showError(e.getHeader(), e.getMessage());
         }
@@ -672,6 +702,7 @@ public class MusicPlayerController implements PlaybackObserver {
                     currentPlaylistLabel.setText("Stai ascoltando Playlist: " + playlistSelezionata.getName());
                 }
                 commandManager.clearHistory();
+                saveLibraryAsync();
             } catch (PlaylistValidationException e) {
                 AlertUtil.showError(e.getHeader(), e.getMessage());
             }
@@ -726,6 +757,8 @@ public class MusicPlayerController implements PlaybackObserver {
             refreshTableUI();
             clearTrackInputs();
 
+            saveLibraryAsync();
+
         } catch (TrackValidationException e) {
             AlertUtil.showError(e.getHeader(), e.getMessage());
         }
@@ -753,6 +786,7 @@ public class MusicPlayerController implements PlaybackObserver {
             refreshTableUI();
             clearTrackInputs();
 
+            saveLibraryAsync();
         } catch (TrackValidationException e) {
             AlertUtil.showError(e.getHeader(), e.getMessage());
         }
@@ -787,6 +821,7 @@ public class MusicPlayerController implements PlaybackObserver {
             }
             AssignTrackCommand cmd = new AssignTrackCommand(playlistScelta, tracciaSelezionata, playlistService);
             commandManager.executeCommand(cmd);
+            saveLibraryAsync();
 
             AlertUtil.showInfo("Fatto!", "Traccia aggiunta a " + playlistScelta.getName());
             if (playlistAttuale == playlistScelta) refreshTableUI();
@@ -811,8 +846,10 @@ public class MusicPlayerController implements PlaybackObserver {
         }
 
         // DELEGAZIONE AL COMMAND MANAGER
+        String playlistId = playlistSelezionata.getId();
         DeletePlaylistCommand cmd = new DeletePlaylistCommand(playlistSelezionata, libreria, libraryService);
         commandManager.executeCommand(cmd);
+        persistenceService.deletePlaylistAsync(playlistId);
 
         if (playlistAttuale == playlistSelezionata) {
             onViewAllTracksClick();
@@ -843,8 +880,10 @@ public class MusicPlayerController implements PlaybackObserver {
         }
 
         // DELEGAZIONE AL COMMAND MANAGER
+        String trackId = tracciaSelezionata.getId();
         DeleteTrackCommand cmd = new DeleteTrackCommand(tracciaSelezionata, playlistAttuale, potenzialeTag, libreria, libraryService, playlistService);
         commandManager.executeCommand(cmd);
+        persistenceService.deleteTrackAsync(trackId);
 
         syncSmartPlaylists();
         refreshTableUI();
