@@ -46,7 +46,7 @@ public class MusicPlayerController implements PlaybackObserver {
     @FXML private Label timeLabel;
 
     @FXML private TableView<Track> trackTable;
-    @FXML private TableColumn<Track, String> tagsColumn; // Colonna Tag
+    @FXML private TableColumn<Track, String> tagsColumn;
     @FXML private TableColumn<Track, String> titleColumn;
     @FXML private TableColumn<Track, String> authorColumn;
     @FXML private TableColumn<Track, String> lengthColumn;
@@ -100,7 +100,6 @@ public class MusicPlayerController implements PlaybackObserver {
 
         autoPlaylistTypeComboBox.setValue("Genere");
 
-        // Factory per la colonna dei Tag
         if (tagsColumn != null) {
             tagsColumn.setCellValueFactory(new PropertyValueFactory<>("visualTags"));
         }
@@ -112,7 +111,6 @@ public class MusicPlayerController implements PlaybackObserver {
 
         playlistListView.setItems(libreria.getPlaylists());
 
-        // Filtriamo le playlist normali per il menù a tendina (nascondiamo le Smart Playlist)
         FilteredList<Playlist> normalPlaylistsOnly = new FilteredList<>(
                 libreria.getPlaylists(),
                 p -> !isSmartPlaylist(p)
@@ -121,7 +119,6 @@ public class MusicPlayerController implements PlaybackObserver {
 
         trackTable.setItems(libreria.getAllTracks());
 
-        // DOPPIO CLICK SULLA TABELLA PER RIPRODURRE
         trackTable.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
                 Track tracciaSelezionata = trackTable.getSelectionModel().getSelectedItem();
@@ -134,7 +131,6 @@ public class MusicPlayerController implements PlaybackObserver {
             }
         });
 
-        // DOPPIO CLICK SULLA PLAYLIST PER FARLA PARTIRE SUBITO
         playlistListView.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
                 Playlist selezionata = playlistListView.getSelectionModel().getSelectedItem();
@@ -154,7 +150,6 @@ public class MusicPlayerController implements PlaybackObserver {
             }
         });
 
-        // ASCOLTATORE CAMBIO PLAYLIST
         playlistListView.getSelectionModel().selectedItemProperty().addListener((obs, vecchia, nuova) -> {
             if (nuova != null) {
                 playlistAttuale = nuova;
@@ -167,7 +162,6 @@ public class MusicPlayerController implements PlaybackObserver {
             }
         });
 
-        // ASCOLTATORE SELEZIONE SINGOLA
         trackTable.getSelectionModel().selectedItemProperty().addListener((obs, vecchia, nuova) -> {
             if (nuova != null) {
                 titleInput.setText(nuova.getTitle());
@@ -178,7 +172,6 @@ public class MusicPlayerController implements PlaybackObserver {
                 long totalSeconds = nuova.getLength().getSeconds();
                 lengthInput.setText(String.format("%d:%02d", totalSeconds / 60, totalSeconds % 60));
 
-                // Popola i checkbox in base ai tag presenti
                 if (favCheck != null) favCheck.setSelected(nuova.getTags().contains(TrackTag.FAVOURITE));
                 if (explicitCheck != null) explicitCheck.setSelected(nuova.getTags().contains(TrackTag.EXPLICIT));
                 if (newReleaseCheck != null) newReleaseCheck.setSelected(nuova.getTags().contains(TrackTag.NEW_RELEASE));
@@ -194,14 +187,9 @@ public class MusicPlayerController implements PlaybackObserver {
         });
     }
 
-    // === METODI DI SUPPORTO PER I TAG ===
     private boolean isSmartPlaylist(Playlist p) {
-
-        if(p == null)
-            return false;
-
-
-        return p.isGenerataAutomaticamente();
+        if(p == null) return false;
+        return p.isGenerataAutomaticamente() || getTagFromPlaylistName(p.getName()) != null;
     }
 
     private TrackTag getTagFromPlaylistName(String name) {
@@ -216,9 +204,6 @@ public class MusicPlayerController implements PlaybackObserver {
         return null;
     }
 
-
-
-    // Motore di sincronizzazione automatica dei Tag
     private void syncSmartPlaylists() {
         for (TrackTag tag : TrackTag.values()) {
             String nomeBase = switch (tag) {
@@ -240,11 +225,6 @@ public class MusicPlayerController implements PlaybackObserver {
             if (playlistEsistente != null) {
                 playlistEsistente.getTracks().clear();
                 playlistEsistente.getTracks().addAll(tracceTaggate);
-
-                if (playlistAttuale == playlistEsistente) {
-                    trackTable.setItems(playlistEsistente.getTracks());
-                    trackTable.refresh();
-                }
             } else if (!tracceTaggate.isEmpty()) {
                 try {
                     Playlist nuovaAuto = playlistService.createPlaylist(nomeCompleto, libreria);
@@ -253,16 +233,24 @@ public class MusicPlayerController implements PlaybackObserver {
                 } catch (PlaylistValidationException ignored) {}
             }
         }
-        playlistListView.refresh();
 
-        // Rinfreschiamo il combobox per nascondere eventuali nuove Smart Playlist
         FilteredList<Playlist> normalPlaylistsOnly = new FilteredList<>(
                 libreria.getPlaylists(),
                 p -> !isSmartPlaylist(p)
         );
         playlistComboBox.setItems(normalPlaylistsOnly);
     }
-    // =====================================
+
+    // Aggiornamento grafico della tabella
+    private void refreshTableUI() {
+        if (playlistAttuale != null) {
+            trackTable.setItems(playlistAttuale.getTracks());
+        } else {
+            trackTable.setItems(libreria.getAllTracks());
+        }
+        trackTable.refresh();
+        playlistListView.refresh();
+    }
 
     private void clearTrackInputs() {
         titleInput.clear();
@@ -337,7 +325,6 @@ public class MusicPlayerController implements PlaybackObserver {
         Track tracciaSelezionata = trackTable.getSelectionModel().getSelectedItem();
         Track tracciaCorrente = audioPlayerService.getCurrentTrack();
 
-        // AVVIO AUTOMATICO DALLA PRIMA TRACCIA SE NESSUNA È SELEZIONATA
         if (tracciaSelezionata == null && tracciaCorrente == null) {
             java.util.List<Track> listaAttuale = getCurrentTrackList();
             if (!listaAttuale.isEmpty()) {
@@ -531,7 +518,7 @@ public class MusicPlayerController implements PlaybackObserver {
         }
 
         if (isSmartPlaylist(playlistSelezionata)) {
-            AlertUtil.showError("Azione non consentita", "Le Smart Playlist generate dai Tag non possono essere rinominate.");
+            AlertUtil.showError("Azione non consentita", "Le Smart Playlist non possono essere rinominate.");
             return;
         }
 
@@ -547,7 +534,10 @@ public class MusicPlayerController implements PlaybackObserver {
                 playlistService.renamePlaylist(playlistSelezionata, nuovoNome, libreria);
                 playlistListView.refresh();
 
-                FilteredList<Playlist> normalPlaylistsOnly = new FilteredList<>(libreria.getPlaylists(), p -> !isSmartPlaylist(p));
+                FilteredList<Playlist> normalPlaylistsOnly = new FilteredList<>(
+                        libreria.getPlaylists(),
+                        p -> !isSmartPlaylist(p)
+                );
                 playlistComboBox.setItems(null);
                 playlistComboBox.setItems(normalPlaylistsOnly);
 
@@ -587,7 +577,6 @@ public class MusicPlayerController implements PlaybackObserver {
                             break;
                     }
 
-
                     if (!compatibile) {
                         AlertUtil.showError(
                                 "Traccia non compatibile",
@@ -599,7 +588,6 @@ public class MusicPlayerController implements PlaybackObserver {
                 }
             }
 
-
             Track nuovaTraccia = trackService.createTrack(
                     titleInput.getText(),
                     authorInput.getText(),
@@ -608,7 +596,6 @@ public class MusicPlayerController implements PlaybackObserver {
                     yearInput.getText(),
                     libreria
             );
-
 
             // TAG MANUALI
             if (favCheck != null && favCheck.isSelected())
@@ -619,8 +606,6 @@ public class MusicPlayerController implements PlaybackObserver {
 
             if (newReleaseCheck != null && newReleaseCheck.isSelected())
                 nuovaTraccia.addTag(TrackTag.NEW_RELEASE);
-
-
 
             // TAG DA SMART PLAYLIST TAG
             if (playlistAttuale != null) {
@@ -633,27 +618,29 @@ public class MusicPlayerController implements PlaybackObserver {
                 }
             }
 
-
+            // === IL FIX È QUI ===
+            // Salvataggio globale della traccia
             libraryService.addTrackToLibrary(
                     libreria,
                     nuovaTraccia
             );
 
+            // Salvataggio locale se siamo all'interno di una playlist "normale"
+            if (playlistAttuale != null && !isSmartPlaylist(playlistAttuale)) {
+                playlistService.addTrackToPlaylist(playlistAttuale, nuovaTraccia);
+            }
+            // ====================
 
-            playlistService.syncSmartPlaylists(
-                    libreria,
-                    libraryService
-            );
-
+            syncSmartPlaylists();
 
             playlistService.syncTrackWithAutomaticPlaylists(
                     nuovaTraccia,
                     libreria
             );
 
-
+            // Forza l'aggiornamento grafico
+            refreshTableUI();
             clearTrackInputs();
-
 
         } catch (TrackValidationException e) {
 
@@ -670,7 +657,6 @@ public class MusicPlayerController implements PlaybackObserver {
         Track tracciaSelezionata =
                 trackTable.getSelectionModel().getSelectedItem();
 
-
         if (tracciaSelezionata == null) {
 
             AlertUtil.showError(
@@ -680,7 +666,6 @@ public class MusicPlayerController implements PlaybackObserver {
 
             return;
         }
-
 
         try {
 
@@ -698,30 +683,19 @@ public class MusicPlayerController implements PlaybackObserver {
             tracciaSelezionata.getTags().clear();
 
             if (favCheck != null && favCheck.isSelected()) {
-
-                tracciaSelezionata.addTag(
-                        TrackTag.FAVOURITE
-                );
+                tracciaSelezionata.addTag(TrackTag.FAVOURITE);
             }
             if (explicitCheck != null && explicitCheck.isSelected()) {
-
-                tracciaSelezionata.addTag(
-                        TrackTag.EXPLICIT
-                );
+                tracciaSelezionata.addTag(TrackTag.EXPLICIT);
             }
             if (newReleaseCheck != null && newReleaseCheck.isSelected()) {
-
-                tracciaSelezionata.addTag(
-                        TrackTag.NEW_RELEASE
-                );
+                tracciaSelezionata.addTag(TrackTag.NEW_RELEASE);
             }
+
             // ==============================
             // SMART PLAYLIST DA TAG
             // ==============================
-            playlistService.syncSmartPlaylists(
-                    libreria,
-                    libraryService
-            );
+            syncSmartPlaylists();
 
             // ==============================
             // SMART PLAYLIST GENERE / ANNO
@@ -732,8 +706,7 @@ public class MusicPlayerController implements PlaybackObserver {
             );
 
             // Aggiorna UI
-            trackTable.refresh();
-            playlistListView.refresh();
+            refreshTableUI();
             clearTrackInputs();
 
         } catch (TrackValidationException e) {
@@ -768,6 +741,7 @@ public class MusicPlayerController implements PlaybackObserver {
         try {
             playlistService.addTrackToPlaylist(playlistScelta, tracciaSelezionata);
             AlertUtil.showInfo("Fatto!", "Traccia aggiunta a " + playlistScelta.getName());
+            if (playlistAttuale == playlistScelta) refreshTableUI();
         } catch (PlaylistValidationException e) {
             AlertUtil.showError(e.getHeader(), e.getMessage());
         }
@@ -819,9 +793,16 @@ public class MusicPlayerController implements PlaybackObserver {
             libraryService.deleteTrackGlobal(libreria, tracciaSelezionata);
             syncSmartPlaylists();
         } else {
-            playlistService.removeTrackFromPlaylist(playlistAttuale, tracciaSelezionata);
+            if (getTagFromPlaylistName(playlistAttuale.getName()) != null) {
+                TrackTag tag = getTagFromPlaylistName(playlistAttuale.getName());
+                tracciaSelezionata.getTags().remove(tag);
+                syncSmartPlaylists();
+            } else {
+                playlistService.removeTrackFromPlaylist(playlistAttuale, tracciaSelezionata);
+            }
         }
 
+        refreshTableUI();
         clearTrackInputs();
     }
 
@@ -889,6 +870,13 @@ public class MusicPlayerController implements PlaybackObserver {
                     "Aggiunte " + tracceTrovate.size() + " tracce alla playlist."
             );
 
+            // Rinfreschiamo il combobox per evitare che questa nuova Auto-Playlist appaia
+            FilteredList<Playlist> normalPlaylistsOnly = new FilteredList<>(
+                    libreria.getPlaylists(),
+                    p -> !isSmartPlaylist(p)
+            );
+            playlistComboBox.setItems(normalPlaylistsOnly);
+
         } catch (PlaylistValidationException e) {
             AlertUtil.showError(
                     e.getHeader(),
@@ -896,5 +884,4 @@ public class MusicPlayerController implements PlaybackObserver {
             );
         }
     }
-
 }
