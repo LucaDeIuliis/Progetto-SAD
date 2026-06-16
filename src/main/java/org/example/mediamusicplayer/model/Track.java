@@ -17,6 +17,9 @@ public class Track {
     // NUOVO: Insieme di tag visuali (senza duplicati)
     private Set<TrackTag> tags;
 
+    // Numero di riproduzioni completate della traccia
+    private int playCount;
+
     // Costruttore
     public Track(String title, String author, Duration length, String genre, Year year) {
         this.title = title;
@@ -27,6 +30,15 @@ public class Track {
 
         // NUOVO: Inizializza l'insieme dei tag come vuoto e ottimizzato per gli Enum
         this.tags = EnumSet.noneOf(TrackTag.class);
+        this.playCount = 0;
+    }
+
+    public int getPlayCount() {
+        return playCount;
+    }
+
+    public void incrementPlayCount() {
+        playCount++;
     }
 
     // --- GETTERS E SETTERS ---

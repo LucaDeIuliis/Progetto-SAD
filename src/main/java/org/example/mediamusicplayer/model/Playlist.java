@@ -16,14 +16,22 @@ public class Playlist {
     // es. "Rock" oppure "2024"
     private String filtroAutomatico;
 
+    private int playCount;
 
     public Playlist(String name) {
         this.name = name;
         this.tracks = FXCollections.observableArrayList();
-
         this.generataAutomaticamente = false;
+        this.playCount = 0;
     }
 
+    public int getPlayCount() {
+        return playCount;
+    }
+
+    public void incrementPlayCount() {
+        playCount++;
+    }
 
     public String getName() {
         return name;

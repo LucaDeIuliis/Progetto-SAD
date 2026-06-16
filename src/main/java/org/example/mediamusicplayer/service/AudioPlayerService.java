@@ -21,7 +21,7 @@ public class AudioPlayerService {
     private List<Track> playlistCorrente;
     private int secondiTrascorsi = 0;
     private Timeline timeline;
-
+    private boolean tracciaCorrenteConteggiata = false;
     private PlaybackStrategy playbackStrategy;
 
     /*
@@ -57,6 +57,12 @@ public class AudioPlayerService {
     private void notifyTrackChanged() {
         for (PlaybackObserver observer : observers) {
             observer.onTrackChanged(tracciaAttuale);
+        }
+    }
+
+    private void notifyTrackHalfPlayed() {
+        for (PlaybackObserver observer : observers) {
+            observer.onTrackHalfPlayed(tracciaAttuale);
         }
     }
 
@@ -108,6 +114,7 @@ public class AudioPlayerService {
         this.tracciaAttuale = track;
         this.playlistCorrente = tracks;
         this.secondiTrascorsi = 0;
+        this.tracciaCorrenteConteggiata = false;
 
         startTimelineForCurrentTrack();
 
@@ -125,8 +132,14 @@ public class AudioPlayerService {
 
             notifyTimeUpdate();
 
-
             long durataDinamicaAggiornata = tracciaAttuale.getLength().getSeconds();
+
+            long metaDurata = durataDinamicaAggiornata / 2;
+
+            if (!tracciaCorrenteConteggiata && secondiTrascorsi >= metaDurata) {
+                tracciaCorrenteConteggiata = true;
+                notifyTrackHalfPlayed();
+            }
 
             if (secondiTrascorsi >= durataDinamicaAggiornata) {
                 playNextTrack();
@@ -158,6 +171,7 @@ public class AudioPlayerService {
 
         tracciaAttuale = prossimaTraccia;
         secondiTrascorsi = 0;
+        tracciaCorrenteConteggiata = false;
 
         startTimelineForCurrentTrack();
 

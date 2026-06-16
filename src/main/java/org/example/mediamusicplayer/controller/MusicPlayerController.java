@@ -11,12 +11,16 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
-
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+import java.io.IOException;
 import org.example.mediamusicplayer.service.command.CommandManager;
 import org.example.mediamusicplayer.service.command.DeletePlaylistCommand;
 import org.example.mediamusicplayer.service.command.DeleteTrackCommand;
 import org.example.mediamusicplayer.service.command.AssignTrackCommand;
-
+import org.example.mediamusicplayer.service.statistics.PlaybackStatisticsService;
 import org.example.mediamusicplayer.service.playlistnavigation.PlaylistNavigationStrategy;
 import org.example.mediamusicplayer.service.playlistnavigation.PlaylistNavigationStrategyFactory;
 import org.example.mediamusicplayer.model.MusicLibrary;
@@ -72,11 +76,12 @@ public class MusicPlayerController implements PlaybackObserver {
     private MusicLibrary libreria;
     private Playlist playlistAttuale;
     private Playlist playlistCorrente;
-
+    private Playlist playlistInRiproduzione;
     private TrackService trackService;
     private PlaylistService playlistService;
     private MusicLibraryService libraryService;
     private AudioPlayerService audioPlayerService;
+    private PlaybackStatisticsService playbackStatisticsService;
 
     // === GESTORE COMANDI PER UNDO ===
     private CommandManager commandManager;
@@ -87,6 +92,7 @@ public class MusicPlayerController implements PlaybackObserver {
         playlistService = new PlaylistService();
         libraryService = new MusicLibraryService();
         audioPlayerService = new AudioPlayerService();
+        playbackStatisticsService = new PlaybackStatisticsService();
         libreria = new MusicLibrary();
         commandManager = new CommandManager();
 
@@ -136,22 +142,19 @@ public class MusicPlayerController implements PlaybackObserver {
             }
         });
 
+        // DOPPIO CLICK SULLA PLAYLIST PER RIPRODURRE
         playlistListView.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
-                Playlist selezionata = playlistListView.getSelectionModel().getSelectedItem();
-                if (selezionata != null) {
-                    if (selezionata.getTracks().isEmpty()) {
-                        AlertUtil.showError("Playlist vuota", "Non ci sono tracce da riprodurre in questa playlist.");
-                        return;
-                    }
-                    Track primaTraccia = selezionata.getTracks().get(0);
-                    playlistCorrente = selezionata;
-                    audioPlayerService.playTrack(primaTraccia, selezionata.getTracks());
-
-                    trackTable.getSelectionModel().select(primaTraccia);
-                    setPauseButtonState();
-                    showSkipButton();
+                Playlist playlistSelezionata =
+                        playlistListView.getSelectionModel().getSelectedItem();
+                if (playlistSelezionata == null) {
+                    AlertUtil.showError(
+                            "Nessuna playlist selezionata",
+                            "Seleziona una playlist da riprodurre."
+                    );
+                    return;
                 }
+                startPlaylistPlayback(playlistSelezionata);
             }
         });
 
@@ -291,6 +294,54 @@ public class MusicPlayerController implements PlaybackObserver {
         return trackTable.getItems();
     }
 
+    private boolean startPlaylistPlayback(Playlist playlist) {
+        if (playlist == null) {
+            AlertUtil.showError(
+                    "Playlist non disponibile",
+                    "Non è stata specificata una playlist da riprodurre."
+            );
+            return false;
+        }
+
+        if (playlist.getTracks().isEmpty()) {
+            AlertUtil.showInfo(
+                    "Playlist vuota",
+                    "La playlist selezionata non contiene tracce da riprodurre."
+            );
+            return false;
+        }
+
+        /*
+         * La playlist viene considerata riprodotta nel momento
+         * in cui ne viene effettivamente avviata la prima traccia.
+         */
+        playbackStatisticsService.registerPlaylistPlayback(playlist);
+        playlistInRiproduzione = playlist;
+        playlistCorrente = playlist;
+        updateCurrentPlaylistLabel();
+        Track primaTraccia = playlist.getTracks().get(0);
+        audioPlayerService.playTrack(primaTraccia, playlist.getTracks());
+        setPauseButtonState();
+        showSkipButton();
+        return true;
+    }
+
+    private void updateCurrentPlaylistLabel() {
+        if (playlistInRiproduzione != null) {
+            currentPlaylistLabel.setText(
+                    "Stai ascoltando Playlist: " + playlistInRiproduzione.getName()
+            );
+        } else if (playlistAttuale != null) {
+            currentPlaylistLabel.setText(
+                    "Playlist selezionata: " + playlistAttuale.getName()
+            );
+        } else {
+            currentPlaylistLabel.setText(
+                    "Gestione Tracce: Tutte le canzoni"
+            );
+        }
+    }
+
     private void setPlayButtonState() {
         playPauseButton.setText("▶ PLAY");
         playPauseButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
@@ -334,12 +385,48 @@ public class MusicPlayerController implements PlaybackObserver {
     }
 
     @Override
+    public void onTrackHalfPlayed(Track track) {
+        playbackStatisticsService.registerTrackPlayback(track);
+    }
+
+    @Override
     public void onPlaybackFinished() {
         hideSkipButton();
         setPlayButtonState();
         timeLabel.setText("0:00 / 0:00");
     }
+    @FXML
+    public void onShowStatisticsClick() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/org/example/mediamusicplayer/statistics-view.fxml")
+            );
 
+            Parent root = loader.load();
+
+            StatisticsController statisticsController = loader.getController();
+
+            Scene playerScene = trackTable.getScene();
+
+            statisticsController.setData(
+                    libreria,
+                    playbackStatisticsService,
+                    playerScene
+            );
+
+            Stage stage = (Stage) trackTable.getScene().getWindow();
+            Scene statisticsScene = new Scene(root);
+
+            stage.setScene(statisticsScene);
+            stage.setTitle("Statistiche di ascolto");
+
+        } catch (IOException e) {
+            AlertUtil.showError(
+                    "Errore apertura statistiche",
+                    "Non è stato possibile aprire la schermata delle statistiche."
+            );
+        }
+    }
     // === COMANDI AUDIO ===
 
     @FXML
@@ -348,14 +435,24 @@ public class MusicPlayerController implements PlaybackObserver {
         Track tracciaCorrente = audioPlayerService.getCurrentTrack();
 
         if (tracciaSelezionata == null && tracciaCorrente == null) {
-            java.util.List<Track> listaAttuale = getCurrentTrackList();
-            if (!listaAttuale.isEmpty()) {
-                tracciaSelezionata = listaAttuale.get(0);
-                trackTable.getSelectionModel().select(tracciaSelezionata);
-            } else {
-                AlertUtil.showError("Nessuna traccia", "La lista è vuota. Seleziona una playlist con dei brani.");
+            /*
+             * Se è selezionata una playlist, PLAY deve avviare la playlist
+             * dalla prima traccia e registrare una riproduzione.
+             */
+            if (playlistAttuale != null) {
+                startPlaylistPlayback(playlistAttuale);
                 return;
             }
+
+            /*
+             * Se siamo nella vista generale, senza playlist e senza traccia selezionata,
+             * non sappiamo quale elemento riprodurre.
+             */
+            AlertUtil.showError(
+                    "Nessuna traccia",
+                    "Seleziona una traccia oppure una playlist da riprodurre."
+            );
+            return;
         }
 
         if (tracciaSelezionata == null) {
@@ -429,28 +526,31 @@ public class MusicPlayerController implements PlaybackObserver {
 
         if (prossimaPlaylist == null) {
             audioPlayerService.stop();
+            playlistCorrente = null;
+            playlistInRiproduzione = null;
+
             hideSkipButton();
             setPlayButtonState();
             timeLabel.setText("0:00 / 0:00");
 
+            updateCurrentPlaylistLabel();
+
             AlertUtil.showInfo(
                     "Fine playlist",
-                    "Non ci sono altre playlist da riprodurre in modalità sequenziale."
+                    "Non ci sono altre playlist da riprodurre."
             );
             return;
         }
 
-        playlistCorrente = prossimaPlaylist;
         playlistAttuale = prossimaPlaylist;
 
         playlistListView.getSelectionModel().select(prossimaPlaylist);
-        currentPlaylistLabel.setText(
-                "Stai ascoltando Playlist: " + playlistCorrente.getName()
-        );
-        trackTable.setItems(playlistAttuale.getTracks());
+        trackTable.setItems(prossimaPlaylist.getTracks());
 
         showSkipPlaylistButton();
         clearTrackInputs();
+
+        startPlaylistPlayback(prossimaPlaylist);
 
         if (playlistCorrente.getTracks().isEmpty()) {
             audioPlayerService.stop();

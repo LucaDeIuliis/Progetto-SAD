@@ -13,7 +13,9 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane prefHeight="650.0" prefWidth="950.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+<BorderPane prefHeight="650.0" prefWidth="950.0"
+            xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="org.example.mediamusicplayer.controller.MusicPlayerController">
 
     <left>
@@ -22,7 +24,11 @@
                 <Insets top="15.0" right="10.0" bottom="15.0" left="10.0"/>
             </padding>
 
-            <Button text="🎵 Gestione Tutte le Tracce" onAction="#onViewAllTracksClick" maxWidth="Infinity" style="-fx-font-weight: bold; -fx-background-color: #e0e0e0;" />
+            <Button text="🎵 Gestione Tutte le Tracce"
+                    onAction="#onViewAllTracksClick"
+                    maxWidth="Infinity"
+                    style="-fx-font-weight: bold; -fx-background-color: #e0e0e0;" />
+
             <VBox spacing="8.0"
                   style="-fx-padding: 10; -fx-background-color: #eeeeee; -fx-background-radius: 8;">
 
@@ -44,17 +50,32 @@
                         style="-fx-background-color: #9C27B0; -fx-text-fill: white; -fx-font-weight: bold;" />
 
             </VBox>
+
             <Label text="LE TUE PLAYLIST" style="-fx-font-weight: bold; -fx-font-size: 14px;" />
             <ListView fx:id="playlistListView" VBox.vgrow="ALWAYS" />
 
             <VBox spacing="8.0">
                 <TextField fx:id="newPlaylistInput" promptText="Nome nuova playlist..." />
 
-                <Button text="Crea Playlist" onAction="#onAddPlaylistClick" maxWidth="Infinity" style="-fx-background-color: #4CAF50; -fx-text-fill: white;" />
-                <Button text="Rinomina Playlist" onAction="#onRenamePlaylistClick" maxWidth="Infinity" style="-fx-background-color: #2196F3; -fx-text-fill: white;" />
-                <Button text="Elimina Playlist" onAction="#onDeletePlaylistClick" maxWidth="Infinity" style="-fx-background-color: #f44336; -fx-text-fill: white;" />
+                <Button text="Crea Playlist"
+                        onAction="#onAddPlaylistClick"
+                        maxWidth="Infinity"
+                        style="-fx-background-color: #4CAF50; -fx-text-fill: white;" />
 
-                <Button text="↩ Annulla Azione" onAction="#onUndoClick" maxWidth="Infinity" style="-fx-background-color: #607D8B; -fx-text-fill: white; -fx-font-weight: bold; -fx-margin-top: 15px;" />
+                <Button text="Rinomina Playlist"
+                        onAction="#onRenamePlaylistClick"
+                        maxWidth="Infinity"
+                        style="-fx-background-color: #2196F3; -fx-text-fill: white;" />
+
+                <Button text="Elimina Playlist"
+                        onAction="#onDeletePlaylistClick"
+                        maxWidth="Infinity"
+                        style="-fx-background-color: #f44336; -fx-text-fill: white;" />
+
+                <Button text="↩ Annulla Azione"
+                        onAction="#onUndoClick"
+                        maxWidth="Infinity"
+                        style="-fx-background-color: #607D8B; -fx-text-fill: white; -fx-font-weight: bold; -fx-margin-top: 15px;" />
             </VBox>
         </VBox>
     </left>
@@ -65,14 +86,27 @@
                 <Insets top="15.0" right="15.0" bottom="15.0" left="15.0"/>
             </padding>
 
-            <Label fx:id="currentPlaylistLabel" text="Gestione Tracce: Tutte le canzoni" style="-fx-font-size: 18px; -fx-font-weight: bold;" />
+            <Label fx:id="currentPlaylistLabel"
+                   text="Gestione Tracce: Tutte le canzoni"
+                   style="-fx-font-size: 18px; -fx-font-weight: bold;" />
 
-            <VBox alignment="CENTER" spacing="8.0" style="-fx-padding: 10; -fx-background-color: #2b2b2b; -fx-background-radius: 8;">
+            <VBox alignment="CENTER"
+                  spacing="8.0"
+                  style="-fx-padding: 10; -fx-background-color: #2b2b2b; -fx-background-radius: 8;">
 
-                <Label fx:id="timeLabel" text="0:00 / 0:00" maxWidth="680.0" alignment="CENTER" style="-fx-text-fill: #4CAF50; -fx-font-weight: bold; -fx-font-size: 16px;" />
+                <Label fx:id="timeLabel"
+                       text="0:00 / 0:00"
+                       maxWidth="680.0"
+                       alignment="CENTER"
+                       style="-fx-text-fill: #4CAF50; -fx-font-weight: bold; -fx-font-size: 16px;" />
 
                 <HBox alignment="CENTER" spacing="15.0">
-                    <Button fx:id="playPauseButton" text="▶ PLAY" onAction="#onPlayPauseClick" prefWidth="120.0" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;" />
+                    <Button fx:id="playPauseButton"
+                            text="▶ PLAY"
+                            onAction="#onPlayPauseClick"
+                            prefWidth="120.0"
+                            style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;" />
+
                     <Button text="⏹ STOP"
                             onAction="#onStopClick"
                             prefWidth="100.0"
@@ -86,8 +120,11 @@
                             managed="false"
                             style="-fx-background-color: #9C27B0; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;" />
 
-                    <Label text="Modalità:" style="-fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 0 0 0 20;" />
+                    <Label text="Modalità:"
+                           style="-fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 0 0 0 20;" />
+
                     <ComboBox fx:id="playbackModeComboBox" prefWidth="140.0" />
+
                     <Button fx:id="skipPlaylistButton"
                             text="⏭ Playlist"
                             onAction="#onSkipPlaylistClick"
@@ -95,6 +132,12 @@
                             managed="false"
                             prefWidth="120.0"
                             style="-fx-background-color: #9C27B0; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;" />
+
+                    <Button text="📊"
+                            onAction="#onShowStatisticsClick"
+                            prefWidth="45.0"
+                            prefHeight="32.0"
+                            style="-fx-background-color: #455A64; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 13px;" />
                 </HBox>
             </VBox>
 
@@ -104,7 +147,6 @@
                 </columnResizePolicy>
                 <columns>
                     <TableColumn fx:id="tagsColumn" text="Tag" prefWidth="60.0" />
-
                     <TableColumn fx:id="titleColumn" text="Titolo" prefWidth="100.0" />
                     <TableColumn fx:id="authorColumn" text="Autore" prefWidth="100.0" />
                     <TableColumn fx:id="lengthColumn" text="Durata" prefWidth="100.0" />
@@ -129,15 +171,32 @@
             </HBox>
 
             <HBox alignment="CENTER" spacing="10.0">
-                <Button text="Crea" onAction="#onAddTrackClick" style="-fx-background-color: #4CAF50; -fx-text-fill: white;" />
-                <Button text="Modifica" onAction="#onUpdateTrackClick" style="-fx-background-color: #2196F3; -fx-text-fill: white;" />
-                <Button text="Elimina" onAction="#onDeleteTrackClick" style="-fx-background-color: #f44336; -fx-text-fill: white;" />
+                <Button text="Crea"
+                        onAction="#onAddTrackClick"
+                        style="-fx-background-color: #4CAF50; -fx-text-fill: white;" />
+
+                <Button text="Modifica"
+                        onAction="#onUpdateTrackClick"
+                        style="-fx-background-color: #2196F3; -fx-text-fill: white;" />
+
+                <Button text="Elimina"
+                        onAction="#onDeleteTrackClick"
+                        style="-fx-background-color: #f44336; -fx-text-fill: white;" />
             </HBox>
 
-            <HBox alignment="CENTER" spacing="10.0" style="-fx-padding: 10 0 0 0; -fx-border-color: #cccccc; -fx-border-width: 1 0 0 0;">
+            <HBox alignment="CENTER"
+                  spacing="10.0"
+                  style="-fx-padding: 10 0 0 0; -fx-border-color: #cccccc; -fx-border-width: 1 0 0 0;">
+
                 <Label text="Aggiungi traccia selezionata a:" />
-                <ComboBox fx:id="playlistComboBox" promptText="Scegli Playlist..." prefWidth="150.0" />
-                <Button text="Aggiungi a Playlist" onAction="#onAssignToPlaylistClick" style="-fx-background-color: #FF9800; -fx-text-fill: white;" />
+
+                <ComboBox fx:id="playlistComboBox"
+                          promptText="Scegli Playlist..."
+                          prefWidth="150.0" />
+
+                <Button text="Aggiungi a Playlist"
+                        onAction="#onAssignToPlaylistClick"
+                        style="-fx-background-color: #FF9800; -fx-text-fill: white;" />
             </HBox>
 
         </VBox>

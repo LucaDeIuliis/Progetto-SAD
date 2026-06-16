@@ -9,4 +9,7 @@ public interface PlaybackObserver {
     void onTrackChanged(Track currentTrack);
 
     void onPlaybackFinished();
+
+    default void onTrackHalfPlayed(Track track) {
+    }
 }
