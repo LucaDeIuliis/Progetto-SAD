@@ -53,6 +53,8 @@
                 <Button text="Crea Playlist" onAction="#onAddPlaylistClick" maxWidth="Infinity" style="-fx-background-color: #4CAF50; -fx-text-fill: white;" />
                 <Button text="Rinomina Playlist" onAction="#onRenamePlaylistClick" maxWidth="Infinity" style="-fx-background-color: #2196F3; -fx-text-fill: white;" />
                 <Button text="Elimina Playlist" onAction="#onDeletePlaylistClick" maxWidth="Infinity" style="-fx-background-color: #f44336; -fx-text-fill: white;" />
+
+                <Button text="↩ Annulla Azione" onAction="#onUndoClick" maxWidth="Infinity" style="-fx-background-color: #607D8B; -fx-text-fill: white; -fx-font-weight: bold; -fx-margin-top: 15px;" />
             </VBox>
         </VBox>
     </left>
