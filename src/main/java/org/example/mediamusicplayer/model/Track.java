@@ -5,9 +5,10 @@ import java.time.Year;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 public class Track {
-
+    private String id;
     private String title;
     private String author;
     private Duration length; // Perfetto! Usiamo Duration
@@ -22,6 +23,7 @@ public class Track {
 
     // Costruttore
     public Track(String title, String author, Duration length, String genre, Year year) {
+        this.id = UUID.randomUUID().toString();
         this.title = title;
         this.author = author;
         this.length = length;
@@ -56,6 +58,9 @@ public class Track {
 
     public Year getYear() { return year; }
     public void setYear(Year year) { this.year = year; }
+
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
 
     // === GESTIONE DEI TAG VISUALI ===
 

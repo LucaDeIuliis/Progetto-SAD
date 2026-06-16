@@ -2,12 +2,12 @@ package org.example.mediamusicplayer.model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import java.util.UUID;
 
 public class Playlist {
-
+    private String id;
     private String name;
     private ObservableList<Track> tracks;
-
     private boolean generataAutomaticamente;
 
     // "Genere" oppure "Anno"
@@ -19,6 +19,7 @@ public class Playlist {
     private int playCount;
 
     public Playlist(String name) {
+        this.id = UUID.randomUUID().toString();
         this.name = name;
         this.tracks = FXCollections.observableArrayList();
         this.generataAutomaticamente = false;
@@ -87,6 +88,9 @@ public class Playlist {
         this.filtroAutomatico = filtroAutomatico;
     }
 
+    public String getId() { return id; }
+
+    public void setId(String id) { this.id = id; }
 
     @Override
     public String toString() {
