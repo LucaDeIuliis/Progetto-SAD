@@ -112,4 +112,108 @@ class TrackTest {
         assertEquals(Year.of(2020), track.getYear());
         assertEquals(Duration.ofSeconds(200), track.getLength());
     }
+    @Test
+    void constructor_ShouldInitializeEmptyTags() {
+
+        Track track = new Track(
+                "Song",
+                "Artist",
+                Duration.ofSeconds(200),
+                "Rock",
+                Year.of(2020)
+        );
+
+        assertNotNull(track.getTags());
+        assertTrue(track.getTags().isEmpty());
+    }
+
+
+    @Test
+    void addTag_ShouldAddTag() {
+
+        Track track = new Track(
+                "Song",
+                "Artist",
+                Duration.ofSeconds(200),
+                "Rock",
+                Year.of(2020)
+        );
+
+        track.addTag(TrackTag.FAVOURITE);
+
+        assertTrue(track.getTags().contains(TrackTag.FAVOURITE));
+    }
+
+
+    @Test
+    void removeTag_ShouldRemoveTag() {
+
+        Track track = new Track(
+                "Song",
+                "Artist",
+                Duration.ofSeconds(200),
+                "Rock",
+                Year.of(2020)
+        );
+
+        track.addTag(TrackTag.EXPLICIT);
+
+        track.removeTag(TrackTag.EXPLICIT);
+
+        assertFalse(track.getTags().contains(TrackTag.EXPLICIT));
+    }
+
+
+    @Test
+    void addDuplicateTag_ShouldNotDuplicate() {
+
+        Track track = new Track(
+                "Song",
+                "Artist",
+                Duration.ofSeconds(200),
+                "Rock",
+                Year.of(2020)
+        );
+
+        track.addTag(TrackTag.FAVOURITE);
+        track.addTag(TrackTag.FAVOURITE);
+
+        assertEquals(1, track.getTags().size());
+    }
+
+
+    @Test
+    void getVisualTags_ShouldReturnSymbols() {
+
+        Track track = new Track(
+                "Song",
+                "Artist",
+                Duration.ofSeconds(200),
+                "Rock",
+                Year.of(2020)
+        );
+
+        track.addTag(TrackTag.FAVOURITE);
+        track.addTag(TrackTag.EXPLICIT);
+
+        String result = track.getVisualTags();
+
+        assertTrue(result.contains("❤"));
+        assertTrue(result.contains("🔞"));
+    }
+
+
+    @Test
+    void getVisualTags_WhenNoTags_ShouldReturnEmptyString() {
+
+        Track track = new Track(
+                "Song",
+                "Artist",
+                Duration.ofSeconds(200),
+                "Rock",
+                Year.of(2020)
+        );
+
+        assertEquals("", track.getVisualTags());
+    }
 }

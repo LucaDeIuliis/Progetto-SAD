@@ -99,4 +99,61 @@ class PlaylistTest {
 
         assertEquals(2, playlist.getTracks().size());
     }
+
+    @Test
+    void automaticPlaylist_ShouldBeFalseByDefault() {
+
+        Playlist playlist = new Playlist("Rock");
+
+        assertFalse(playlist.isGenerataAutomaticamente());
+    }
+
+
+    @Test
+    void setGenerataAutomaticamente_ShouldUpdateValue() {
+
+        Playlist playlist = new Playlist("Rock");
+
+        playlist.setGenerataAutomaticamente(true);
+
+        assertTrue(playlist.isGenerataAutomaticamente());
+    }
+
+
+    @Test
+    void setTipoFiltro_ShouldStoreFilterType() {
+
+        Playlist playlist = new Playlist("Rock");
+
+        playlist.setTipoFiltro("Genere");
+
+        assertEquals("Genere", playlist.getTipoFiltro());
+    }
+
+
+    @Test
+    void setFiltroAutomatico_ShouldStoreFilterValue() {
+
+        Playlist playlist = new Playlist("Rock");
+
+        playlist.setFiltroAutomatico("Pop");
+
+        assertEquals("Pop", playlist.getFiltroAutomatico());
+    }
+
+
+    @Test
+    void automaticPlaylist_ShouldStoreAllAutomaticData() {
+
+        Playlist playlist = new Playlist("2024");
+
+        playlist.setGenerataAutomaticamente(true);
+        playlist.setTipoFiltro("Anno");
+        playlist.setFiltroAutomatico("2024");
+
+
+        assertTrue(playlist.isGenerataAutomaticamente());
+        assertEquals("Anno", playlist.getTipoFiltro());
+        assertEquals("2024", playlist.getFiltroAutomatico());
+    }
 }

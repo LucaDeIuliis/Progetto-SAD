@@ -43,16 +43,16 @@ class TrackServiceTest {
     }
 
     @Test
-    void createTrack_EmptyTitle_ShouldThrowException() {
+    void createTrack_EmptyGenre_ShouldThrowException() {
 
         assertThrows(
                 TrackValidationException.class,
                 () -> trackService.createTrack(
+                        "Song",
+                        "Artist",
+                        "3:00",
                         "",
-                        "Queen",
-                        "5:55",
-                        "Rock",
-                        "1975",
+                        "2020",
                         library
                 )
         );

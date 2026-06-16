@@ -277,4 +277,162 @@ class PlaylistServiceTest {
                 )
         );
     }
+    @Test
+    void addTrackToAutomaticPlaylist_WithCorrectGenre_ShouldAdd() {
+
+        Playlist playlist = new Playlist("Rock");
+        playlist.setGenerataAutomaticamente(true);
+        playlist.setTipoFiltro("Genere");
+        playlist.setFiltroAutomatico("Rock");
+
+        Track track = new Track(
+                "Song",
+                "Artist",
+                Duration.ofSeconds(200),
+                "Rock",
+                Year.of(2024)
+        );
+
+        playlistService.addTrackToPlaylist(playlist, track);
+
+        assertTrue(playlist.getTracks().contains(track));
+    }
+    @Test
+    void addTrackToAutomaticPlaylist_WithWrongGenre_ShouldThrowException() {
+
+        Playlist playlist = new Playlist("Rock");
+        playlist.setGenerataAutomaticamente(true);
+        playlist.setTipoFiltro("Genere");
+        playlist.setFiltroAutomatico("Rock");
+
+
+        Track track = new Track(
+                "Song",
+                "Artist",
+                Duration.ofSeconds(200),
+                "Pop",
+                Year.of(2024)
+        );
+
+
+        assertThrows(
+                PlaylistValidationException.class,
+                () -> playlistService.addTrackToPlaylist(
+                        playlist,
+                        track
+                )
+        );
+    }
+    @Test
+    void trackRispettaFiltro_YearFilter_ShouldWork() {
+
+        Playlist playlist = new Playlist("2024");
+
+        playlist.setGenerataAutomaticamente(true);
+        playlist.setTipoFiltro("Anno");
+        playlist.setFiltroAutomatico("2024");
+
+
+        Track track = new Track(
+                "Song",
+                "Artist",
+                Duration.ofSeconds(100),
+                "Rock",
+                Year.of(2024)
+        );
+
+
+        assertTrue(
+                playlistService.trackRispettaFiltro(
+                        playlist,
+                        track
+                )
+        );
+    }
+    @Test
+    void normalPlaylist_ShouldAcceptAnyTrack() {
+
+        Playlist playlist = new Playlist("Normale");
+
+        Track track = new Track(
+                "Song",
+                "Artist",
+                Duration.ofSeconds(100),
+                "Metal",
+                Year.of(1990)
+        );
+
+
+        assertTrue(
+                playlistService.trackRispettaFiltro(
+                        playlist,
+                        track
+                )
+        );
+    }
+    @Test
+    void syncTrackWithAutomaticPlaylists_ShouldAddMatchingTrack() {
+
+        Playlist playlist = new Playlist("Rock");
+
+        playlist.setGenerataAutomaticamente(true);
+        playlist.setTipoFiltro("Genere");
+        playlist.setFiltroAutomatico("Rock");
+
+
+        library.getPlaylists().add(playlist);
+
+
+        Track track = new Track(
+                "Song",
+                "Artist",
+                Duration.ofSeconds(200),
+                "Rock",
+                Year.of(2024)
+        );
+
+
+        playlistService.syncTrackWithAutomaticPlaylists(
+                track,
+                library
+        );
+
+
+        assertTrue(
+                playlist.getTracks().contains(track)
+        );
+    }
+    @Test
+    void syncTrackWithAutomaticPlaylists_ShouldRemoveNonMatchingTrack() {
+
+        Playlist playlist = new Playlist("Rock");
+
+        playlist.setGenerataAutomaticamente(true);
+        playlist.setTipoFiltro("Genere");
+        playlist.setFiltroAutomatico("Rock");
+
+
+        Track track = new Track(
+                "Song",
+                "Artist",
+                Duration.ofSeconds(200),
+                "Pop",
+                Year.of(2024)
+        );
+
+
+        playlist.addTrack(track);
+        library.getPlaylists().add(playlist);
+
+
+        playlistService.syncTrackWithAutomaticPlaylists(
+                track,
+                library
+        );
+
+
+        assertFalse(
+                playlist.getTracks().contains(track)
+        );
+    }
 }
