@@ -158,11 +158,27 @@ public class MusicPlayerController implements PlaybackObserver {
         playlistComboBox.setItems(normalPlaylistsOnly);
 
         trackTable.setItems(libreria.getAllTracks());
-// =======================================================
-        // MOTORE DRAG AND DROP ESTETICO PER IL RIORDINO DELLE TRACCE
+
+        // =======================================================
+        // MOTORE DRAG AND DROP ESTETICO + DOPPIO CLIC SULLA RIGA
         // =======================================================
         trackTable.setRowFactory(tv -> {
             TableRow<Track> row = new TableRow<>();
+
+            // === IL FIX: Gestione doppio clic solo se la riga NON è vuota ===
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    Track tracciaSelezionata = row.getItem();
+                    audioPlayerService.playTrack(tracciaSelezionata, getCurrentTrackList());
+                    playlistCorrente = playlistAttuale;
+                    playlistInRiproduzione = playlistAttuale;
+
+                    updateCurrentPlaylistLabel();
+                    setPauseButtonState();
+                    showSkipButton();
+                }
+            });
+            // ================================================================
 
             row.setOnDragDetected(event -> {
                 if (!row.isEmpty()) {
@@ -226,24 +242,9 @@ public class MusicPlayerController implements PlaybackObserver {
                 }
             });
 
-
             return row;
         });
         // =======================================================
-        trackTable.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2) {
-                Track tracciaSelezionata = trackTable.getSelectionModel().getSelectedItem();
-                if (tracciaSelezionata != null) {
-                    audioPlayerService.playTrack(tracciaSelezionata, getCurrentTrackList());
-                    playlistCorrente = playlistAttuale;
-                    playlistInRiproduzione = playlistAttuale;
-
-                    updateCurrentPlaylistLabel();
-                    setPauseButtonState();
-                    showSkipButton();
-                }
-            }
-        });
 
         // DOPPIO CLICK SULLA PLAYLIST PER RIPRODURRE
         playlistListView.setOnMouseClicked(event -> {
