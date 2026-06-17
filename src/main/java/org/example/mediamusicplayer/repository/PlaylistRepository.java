@@ -19,39 +19,40 @@ public class PlaylistRepository {
         this.databaseManager = databaseManager;
     }
 
-    public void save(Playlist playlist) {
+    public void save(Playlist playlist) throws SQLException {
+        try (Connection connection = databaseManager.getConnection()) {
+            save(connection, playlist);
+        }
+    }
+
+    public void save(Connection connection, Playlist playlist) throws SQLException {
         String sql = """
-                INSERT INTO playlists (
-                    id,
-                    name,
-                    generated_automatically,
-                    filter_type,
-                    automatic_filter,
-                    play_count
-                )
-                VALUES (?, ?, ?, ?, ?, ?)
-                ON CONFLICT(id) DO UPDATE SET
-                    name = excluded.name,
-                    generated_automatically = excluded.generated_automatically,
-                    filter_type = excluded.filter_type,
-                    automatic_filter = excluded.automatic_filter,
-                    play_count = excluded.play_count
-                """;
+            INSERT INTO playlists (
+                id,
+                name,
+                generated_automatically,
+                filter_type,
+                automatic_filter,
+                play_count
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                name = excluded.name,
+                generated_automatically = excluded.generated_automatically,
+                filter_type = excluded.filter_type,
+                automatic_filter = excluded.automatic_filter,
+                play_count = excluded.play_count
+            """;
 
-        try (Connection connection = databaseManager.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, playlist.getId());
             statement.setString(2, playlist.getName());
-            statement.setInt(3, playlist.isGenerataAutomaticamente() ? 1 : 0);
+            statement.setBoolean(3, playlist.isGenerataAutomaticamente());
             statement.setString(4, playlist.getTipoFiltro());
             statement.setString(5, playlist.getFiltroAutomatico());
             statement.setInt(6, playlist.getPlayCount());
 
             statement.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Errore durante il salvataggio della playlist", e);
         }
     }
 
@@ -89,6 +90,49 @@ public class PlaylistRepository {
 
         } catch (SQLException e) {
             throw new RuntimeException("Errore durante il salvataggio delle tracce della playlist", e);
+        }
+    }
+
+    public void savePlaylistTracks(
+            Connection connection,
+            Playlist playlist
+    ) throws SQLException {
+
+        String deleteSql = """
+            DELETE FROM playlist_tracks
+            WHERE playlist_id = ?
+            """;
+
+        try (PreparedStatement statement =
+                     connection.prepareStatement(deleteSql)) {
+
+            statement.setString(1, playlist.getId());
+            statement.executeUpdate();
+        }
+
+        String insertSql = """
+            INSERT INTO playlist_tracks (
+                playlist_id,
+                track_id,
+                track_order
+            )
+            VALUES (?, ?, ?)
+            """;
+
+        try (PreparedStatement statement =
+                     connection.prepareStatement(insertSql)) {
+
+            int order = 0;
+
+            for (Track track : playlist.getTracks()) {
+                statement.setString(1, playlist.getId());
+                statement.setString(2, track.getId());
+                statement.setInt(3, order++);
+
+                statement.addBatch();
+            }
+
+            statement.executeBatch();
         }
     }
 

@@ -120,7 +120,7 @@ public class MusicPlayerController implements PlaybackObserver {
 
         trackRepository = new TrackRepository(databaseManager);
         playlistRepository = new PlaylistRepository(databaseManager);
-        musicLibraryRepository = new MusicLibraryRepository(trackRepository, playlistRepository);
+        musicLibraryRepository = new MusicLibraryRepository(databaseManager, trackRepository, playlistRepository);
         persistenceService = new PersistenceService(musicLibraryRepository, trackRepository, playlistRepository);
         libreria = new MusicLibrary();
         commandManager = new CommandManager();
@@ -169,9 +169,25 @@ public class MusicPlayerController implements PlaybackObserver {
             row.setOnMouseClicked(event -> {
                 if (event.getClickCount() == 2 && !row.isEmpty()) {
                     Track tracciaSelezionata = row.getItem();
-                    audioPlayerService.playTrack(tracciaSelezionata, getCurrentTrackList());
+
+                    audioPlayerService.playTrack(
+                            tracciaSelezionata,
+                            getCurrentTrackList()
+                    );
+
                     playlistCorrente = playlistAttuale;
                     playlistInRiproduzione = playlistAttuale;
+
+                    /*
+                     * Se la traccia viene avviata dalla vista di una playlist,
+                     * anche la playlist viene considerata riprodotta.
+                     */
+                    if (playlistAttuale != null) {
+                        playbackStatisticsService.registerPlaylistPlayback(
+                                playlistAttuale
+                        );
+                        saveLibraryAsync();
+                    }
 
                     updateCurrentPlaylistLabel();
                     setPauseButtonState();

@@ -22,45 +22,70 @@ public class TrackRepository {
         this.databaseManager = databaseManager;
     }
 
-    public void save(Track track) {
+    public void save(Track track) throws SQLException {
+        try (Connection connection = databaseManager.getConnection()) {
+            save(connection, track);
+        }
+    }
+
+    public void save(Connection connection, Track track) throws SQLException {
         String sql = """
-                INSERT INTO tracks (
-                    id,
-                    title,
-                    author,
-                    length_seconds,
-                    genre,
-                    year,
-                    play_count
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(id) DO UPDATE SET
-                    title = excluded.title,
-                    author = excluded.author,
-                    length_seconds = excluded.length_seconds,
-                    genre = excluded.genre,
-                    year = excluded.year,
-                    play_count = excluded.play_count
-                """;
+            INSERT INTO tracks (
+                id,
+                title,
+                author,
+                length_seconds,
+                genre,
+                year,
+                play_count
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                title = excluded.title,
+                author = excluded.author,
+                length_seconds = excluded.length_seconds,
+                genre = excluded.genre,
+                year = excluded.year,
+                play_count = excluded.play_count
+            """;
 
-        try (Connection connection = databaseManager.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, track.getId());
             statement.setString(2, track.getTitle());
             statement.setString(3, track.getAuthor());
-            statement.setLong(4, track.getLength().getSeconds());
+            statement.setInt(4, Math.toIntExact(track.getLength().toSeconds()));
             statement.setString(5, track.getGenre());
             statement.setInt(6, track.getYear().getValue());
             statement.setInt(7, track.getPlayCount());
 
             statement.executeUpdate();
+        }
+    }
 
-        } catch (SQLException e) {
-            throw new RuntimeException(
-                    "Errore durante il salvataggio della traccia",
-                    e
-            );
+    public void saveTrackTags(Connection connection, Track track) throws SQLException {
+        String deleteSql = """
+            DELETE FROM track_tags
+            WHERE track_id = ?
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(deleteSql)) {
+            statement.setString(1, track.getId());
+            statement.executeUpdate();
+        }
+
+        String insertSql = """
+            INSERT INTO track_tags (track_id, tag)
+            VALUES (?, ?)
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(insertSql)) {
+            for (TrackTag tag : track.getTags()) {
+                statement.setString(1, track.getId());
+                statement.setString(2, tag.name());
+                statement.addBatch();
+            }
+
+            statement.executeBatch();
         }
     }
 

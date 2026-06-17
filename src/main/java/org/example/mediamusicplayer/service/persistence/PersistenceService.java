@@ -6,6 +6,7 @@ import org.example.mediamusicplayer.repository.MusicLibraryRepository;
 import org.example.mediamusicplayer.repository.PlaylistRepository;
 import org.example.mediamusicplayer.repository.TrackRepository;
 
+import java.sql.SQLException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -35,11 +36,14 @@ public class PersistenceService {
     }
 
     public void saveLibrary(MusicLibrary library) {
-        if (library == null) {
-            return;
+        try {
+            musicLibraryRepository.save(library);
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Errore durante il salvataggio della libreria",
+                    e
+            );
         }
-
-        musicLibraryRepository.save(library);
     }
 
     public void saveLibraryAsync(MusicLibrary library) {
@@ -52,10 +56,22 @@ public class PersistenceService {
         Task<Void> saveTask = new Task<>() {
             @Override
             protected Void call() {
-                musicLibraryRepository.save(librarySnapshot);
+                saveLibrary(librarySnapshot);
                 return null;
             }
         };
+
+        saveTask.setOnFailed(event -> {
+            Throwable error = saveTask.getException();
+
+            System.err.println(
+                    "Errore durante il salvataggio asincrono della libreria:"
+            );
+
+            if (error != null) {
+                error.printStackTrace();
+            }
+        });
 
         persistenceExecutor.execute(saveTask);
     }
@@ -73,6 +89,18 @@ public class PersistenceService {
             }
         };
 
+        deleteTask.setOnFailed(event -> {
+            Throwable error = deleteTask.getException();
+
+            System.err.println(
+                    "Errore durante l'eliminazione asincrona della traccia:"
+            );
+
+            if (error != null) {
+                error.printStackTrace();
+            }
+        });
+
         persistenceExecutor.execute(deleteTask);
     }
 
@@ -88,6 +116,18 @@ public class PersistenceService {
                 return null;
             }
         };
+
+        deleteTask.setOnFailed(event -> {
+            Throwable error = deleteTask.getException();
+
+            System.err.println(
+                    "Errore durante l'eliminazione asincrona della playlist:"
+            );
+
+            if (error != null) {
+                error.printStackTrace();
+            }
+        });
 
         persistenceExecutor.execute(deleteTask);
     }
@@ -110,8 +150,15 @@ public class PersistenceService {
         });
 
         loadTask.setOnFailed(event -> {
+            Throwable error = loadTask.getException();
+
             if (onError != null) {
-                onError.accept(loadTask.getException());
+                onError.accept(error);
+            } else if (error != null) {
+                System.err.println(
+                        "Errore durante il caricamento asincrono della libreria:"
+                );
+                error.printStackTrace();
             }
         });
 
