@@ -37,3 +37,9 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### SQLite database ###
+media_music_player.db
+media_music_player.db-journal
+media_music_player.db-shm
+media_music_player.db-wal
