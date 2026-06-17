@@ -1,5 +1,11 @@
 package org.example.mediamusicplayer.controller;
 
+import javafx.scene.control.TableRow;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DataFormat;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
+import javafx.scene.SnapshotParameters;
 import org.example.mediamusicplayer.persistence.DatabaseInitializer;
 import org.example.mediamusicplayer.persistence.DatabaseManager;
 import javafx.collections.transformation.FilteredList;
@@ -12,6 +18,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -78,6 +85,8 @@ public class MusicPlayerController implements PlaybackObserver {
     @FXML private CheckBox explicitCheck;
     @FXML private CheckBox newReleaseCheck;
 
+    // Inseriscila qui, fuori da qualsiasi metodo:
+    private static final DataFormat SERIALIZED_MIME_TYPE = new DataFormat("application/x-java-serialized-object");
     private MusicLibrary libreria;
     private Playlist playlistAttuale;
     private Playlist playlistCorrente;
@@ -149,7 +158,78 @@ public class MusicPlayerController implements PlaybackObserver {
         playlistComboBox.setItems(normalPlaylistsOnly);
 
         trackTable.setItems(libreria.getAllTracks());
+// =======================================================
+        // MOTORE DRAG AND DROP ESTETICO PER IL RIORDINO DELLE TRACCE
+        // =======================================================
+        trackTable.setRowFactory(tv -> {
+            TableRow<Track> row = new TableRow<>();
 
+            row.setOnDragDetected(event -> {
+                if (!row.isEmpty()) {
+                    Integer index = row.getIndex();
+                    Dragboard db = row.startDragAndDrop(TransferMode.MOVE);
+
+                    // Crea un'immagine solida della riga esattamente com'è
+                    SnapshotParameters sp = new SnapshotParameters();
+                    db.setDragView(row.snapshot(sp, null));
+
+                    // NESSUNA TRASPARENZA applicata alla riga originale
+
+                    ClipboardContent cc = new ClipboardContent();
+                    cc.put(SERIALIZED_MIME_TYPE, index);
+                    db.setContent(cc);
+                    event.consume();
+                }
+            });
+
+            row.setOnDragOver(event -> {
+                Dragboard db = event.getDragboard();
+                if (db.hasContent(SERIALIZED_MIME_TYPE)) {
+                    if (row.getIndex() != ((Integer) db.getContent(SERIALIZED_MIME_TYPE)).intValue()) {
+                        event.acceptTransferModes(TransferMode.MOVE);
+
+                        // Linea guida blu e pulita per l'inserimento
+                        row.setStyle("-fx-border-color: #2196F3; -fx-border-width: 2 0 0 0;");
+                        event.consume();
+                    }
+                }
+            });
+
+            row.setOnDragExited(event -> {
+                row.setStyle(""); // Pulisce lo stile appena il mouse si sposta
+                event.consume();
+            });
+
+            row.setOnDragDropped(event -> {
+                Dragboard db = event.getDragboard();
+                if (db.hasContent(SERIALIZED_MIME_TYPE)) {
+                    int draggedIndex = (Integer) db.getContent(SERIALIZED_MIME_TYPE);
+
+                    Track draggedTrack = trackTable.getItems().remove(draggedIndex);
+
+                    int dropIndex;
+                    if (row.isEmpty()) {
+                        dropIndex = trackTable.getItems().size();
+                    } else {
+                        dropIndex = row.getIndex();
+                    }
+
+                    trackTable.getItems().add(dropIndex, draggedTrack);
+                    event.setDropCompleted(true);
+                    trackTable.getSelectionModel().select(dropIndex);
+
+                    row.setStyle("");
+
+                    commandManager.clearHistory();
+                    saveLibraryAsync();
+                    event.consume();
+                }
+            });
+
+
+            return row;
+        });
+        // =======================================================
         trackTable.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
                 Track tracciaSelezionata = trackTable.getSelectionModel().getSelectedItem();
