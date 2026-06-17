@@ -153,7 +153,7 @@ public class MusicPlayerController implements PlaybackObserver {
 
         FilteredList<Playlist> normalPlaylistsOnly = new FilteredList<>(
                 libreria.getPlaylists(),
-                p -> !isSmartPlaylist(p)
+                p -> !isSmartPlaylist(p) && !p.isGenerataAutomaticamente()
         );
         playlistComboBox.setItems(normalPlaylistsOnly);
 
@@ -368,7 +368,7 @@ public class MusicPlayerController implements PlaybackObserver {
 
         FilteredList<Playlist> normalPlaylistsOnly = new FilteredList<>(
                 libreria.getPlaylists(),
-                p -> !isSmartPlaylist(p)
+                p -> !isSmartPlaylist(p) && !p.isGenerataAutomaticamente()
         );
         playlistComboBox.setItems(normalPlaylistsOnly);
     }
@@ -805,7 +805,7 @@ public class MusicPlayerController implements PlaybackObserver {
 
                 FilteredList<Playlist> normalPlaylistsOnly = new FilteredList<>(
                         libreria.getPlaylists(),
-                        p -> !isSmartPlaylist(p)
+                        p -> !isSmartPlaylist(p) && !p.isGenerataAutomaticamente()
                 );
                 playlistComboBox.setItems(null);
                 playlistComboBox.setItems(normalPlaylistsOnly);
@@ -1062,7 +1062,7 @@ public class MusicPlayerController implements PlaybackObserver {
 
             FilteredList<Playlist> normalPlaylistsOnly = new FilteredList<>(
                     libreria.getPlaylists(),
-                    p -> !isSmartPlaylist(p)
+                    p -> !isSmartPlaylist(p) && !p.isGenerataAutomaticamente()
             );
             playlistComboBox.setItems(normalPlaylistsOnly);
 
