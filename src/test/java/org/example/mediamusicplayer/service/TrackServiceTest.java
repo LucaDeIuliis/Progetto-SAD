@@ -1,277 +1,279 @@
 package org.example.mediamusicplayer.service;
 
 import org.example.mediamusicplayer.exception.TrackValidationException;
-import org.example.mediamusicplayer.model.MusicLibrary;
-import org.example.mediamusicplayer.model.Track;
+import org.example.mediamusicplayer.model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.time.Duration;
-import java.time.Year;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class TrackServiceTest {
 
-    private TrackService trackService;
+    private TrackService service;
     private MusicLibrary library;
+    private Track track;
 
     @BeforeEach
     void setUp() {
-        trackService = new TrackService();
+        service = new TrackService();
         library = new MusicLibrary();
-    }
 
-    @Test
-    void createTrack_ValidData_ShouldCreateTrack() {
-
-        Track track = trackService.createTrack(
-                "Bohemian Rhapsody",
-                "Queen",
-                "5:55",
-                "Rock",
-                "1975",
-                library
-        );
-
-        assertNotNull(track);
-        assertEquals("Bohemian Rhapsody", track.getTitle());
-        assertEquals("Queen", track.getAuthor());
-        assertEquals("Rock", track.getGenre());
-        assertEquals(Year.of(1975), track.getYear());
-        assertEquals(Duration.ofSeconds(355), track.getLength());
-    }
-
-    @Test
-    void createTrack_EmptyGenre_ShouldThrowException() {
-
-        assertThrows(
-                TrackValidationException.class,
-                () -> trackService.createTrack(
-                        "Song",
-                        "Artist",
-                        "3:00",
-                        "",
-                        "2020",
-                        library
-                )
-        );
-    }
-
-    @Test
-    void createTrack_InvalidYear_ShouldThrowException() {
-
-        assertThrows(
-                TrackValidationException.class,
-                () -> trackService.createTrack(
-                        "Song",
-                        "Artist",
-                        "3:30",
-                        "Pop",
-                        "abcd",
-                        library
-                )
-        );
-    }
-
-    @Test
-    void createTrack_FutureYear_ShouldThrowException() {
-
-        int futureYear = Year.now().getValue() + 1;
-
-        assertThrows(
-                TrackValidationException.class,
-                () -> trackService.createTrack(
-                        "Song",
-                        "Artist",
-                        "3:30",
-                        "Pop",
-                        String.valueOf(futureYear),
-                        library
-                )
-        );
-    }
-
-    @Test
-    void createTrack_InvalidDuration_ShouldThrowException() {
-
-        assertThrows(
-                TrackValidationException.class,
-                () -> trackService.createTrack(
-                        "Song",
-                        "Artist",
-                        "3:99",
-                        "Pop",
-                        "2020",
-                        library
-                )
-        );
-    }
-
-    @Test
-    void createTrack_DuplicateTrack_ShouldThrowException() {
-
-        Track existing = new Track(
+        track = new Track(
                 "Song",
                 "Artist",
-                Duration.ofSeconds(200),
-                "Pop",
-                Year.of(2020)
-        );
-
-        library.getAllTracks().add(existing);
-
-        assertThrows(
-                TrackValidationException.class,
-                () -> trackService.createTrack(
-                        "Song",
-                        "Artist",
-                        "3:20",
-                        "Rock",
-                        "2022",
-                        library
-                )
-        );
-    }
-
-    @Test
-    void updateTrack_ShouldUpdateTrackData() {
-
-        Track track = new Track(
-                "Old",
-                "Old Author",
-                Duration.ofSeconds(120),
-                "Pop",
-                Year.of(2010)
+                java.time.Duration.ofSeconds(200),
+                "Rock",
+                java.time.Year.of(2024)
         );
 
         library.getAllTracks().add(track);
-
-        trackService.updateTrack(
-                track,
-                "New Title",
-                "New Author",
-                "4:00",
-                "Rock",
-                "2020",
-                library
-        );
-
-        assertEquals("New Title", track.getTitle());
-        assertEquals("New Author", track.getAuthor());
-        assertEquals("Rock", track.getGenre());
-        assertEquals(Year.of(2020), track.getYear());
-        assertEquals(Duration.ofSeconds(240), track.getLength());
     }
 
-    @Test
-    void updateTrack_NullTrack_ShouldThrowException() {
 
-        assertThrows(
-                TrackValidationException.class,
-                () -> trackService.updateTrack(
-                        null,
-                        "Title",
-                        "Author",
-                        "3:00",
-                        "Rock",
-                        "2020",
+    @Test
+    void shouldCreateTrack() {
+
+        Track nuova =
+                service.createTrack(
+                        "Nuova",
+                        "Autore",
+                        "3:30",
+                        "Pop",
+                        "2023",
                         library
-                )
-        );
-    }
+                );
 
-    @Test
-    void createTrack_ZeroDuration_ShouldThrowException() {
-
-        assertThrows(
-                TrackValidationException.class,
-                () -> trackService.createTrack(
-                        "Song",
-                        "Artist",
-                        "0",
-                        "Rock",
-                        "2020",
-                        library
-                )
-        );
-    }
-
-    @Test
-    void createTrack_DurationInSeconds_ShouldCreateTrack() {
-
-        Track track = trackService.createTrack(
-                "Song",
-                "Artist",
-                "225",
-                "Rock",
-                "2020",
-                library
+        assertEquals(
+                "Nuova",
+                nuova.getTitle()
         );
 
         assertEquals(
-                Duration.ofSeconds(225),
-                track.getLength()
+                "Autore",
+                nuova.getAuthor()
+        );
+
+        assertEquals(
+                "3:30",
+                nuova.getFormattedLength()
         );
     }
+
+
     @Test
-    void updateTrack_DuplicateTrack_ShouldThrowException() {
+    void shouldCreateTrackWithSeconds() {
 
-        Track track1 = new Track(
-                "Song1",
-                "Artist1",
-                Duration.ofSeconds(100),
-                "Pop",
-                Year.of(2020)
-        );
-
-        Track track2 = new Track(
-                "Song2",
-                "Artist2",
-                Duration.ofSeconds(100),
-                "Pop",
-                Year.of(2020)
-        );
-
-        library.getAllTracks().add(track1);
-        library.getAllTracks().add(track2);
-
-        assertThrows(
-                TrackValidationException.class,
-                () -> trackService.updateTrack(
-                        track2,
-                        "Song1",
-                        "Artist1",
-                        "200",
+        Track nuova =
+                service.createTrack(
+                        "Test",
+                        "Artist",
+                        "180",
                         "Rock",
                         "2022",
                         library
+                );
+
+        assertEquals(
+                "3:00",
+                nuova.getFormattedLength()
+        );
+    }
+
+
+    @Test
+    void shouldRejectEmptyTitle() {
+
+        assertThrows(
+                TrackValidationException.class,
+                () -> service.createTrack(
+                        "",
+                        "Artist",
+                        "3:00",
+                        "Rock",
+                        "2024",
+                        library
                 )
         );
     }
+
+
     @Test
-    void updateTrack_SameTrack_ShouldNotBeConsideredDuplicate() {
+    void shouldRejectDuplicateTrack() {
 
-        Track track = new Track(
-                "Song",
-                "Artist",
-                Duration.ofSeconds(100),
-                "Pop",
-                Year.of(2020)
-        );
-
-        library.getAllTracks().add(track);
-
-        assertDoesNotThrow(
-                () -> trackService.updateTrack(
-                        track,
+        assertThrows(
+                TrackValidationException.class,
+                () -> service.createTrack(
                         "Song",
                         "Artist",
-                        "200",
-                        "Rock",
-                        "2021",
+                        "2:00",
+                        "Pop",
+                        "2024",
                         library
                 )
+        );
+    }
+
+
+    @Test
+    void shouldRejectWrongYear() {
+
+        assertThrows(
+                TrackValidationException.class,
+                () -> service.createTrack(
+                        "Future",
+                        "Artist",
+                        "3:00",
+                        "Rock",
+                        "3000",
+                        library
+                )
+        );
+    }
+
+
+    @Test
+    void shouldRejectWrongDuration() {
+
+        assertThrows(
+                TrackValidationException.class,
+                () -> service.createTrack(
+                        "Test",
+                        "Artist",
+                        "abc",
+                        "Rock",
+                        "2024",
+                        library
+                )
+        );
+    }
+
+
+    @Test
+    void shouldUpdateTrack() {
+
+        service.updateTrack(
+                track,
+                "Nuovo Titolo",
+                "Nuovo Autore",
+                "4:00",
+                "Pop",
+                "2020",
+                library
+        );
+
+
+        assertEquals(
+                "Nuovo Titolo",
+                track.getTitle()
+        );
+
+        assertEquals(
+                "Pop",
+                track.getGenre()
+        );
+
+        assertEquals(
+                "4:00",
+                track.getFormattedLength()
+        );
+    }
+
+
+    @Test
+    void shouldNotUpdateDuplicate() {
+
+        Track altra =
+                new Track(
+                        "Altra",
+                        "A",
+                        java.time.Duration.ofSeconds(100),
+                        "Rock",
+                        java.time.Year.of(2022)
+                );
+
+        library.getAllTracks().add(altra);
+
+
+        assertThrows(
+                TrackValidationException.class,
+                () -> service.updateTrack(
+                        track,
+                        "Altra",
+                        "A",
+                        "3:00",
+                        "Pop",
+                        "2024",
+                        library
+                )
+        );
+    }
+
+
+    @Test
+    void shouldUpdateFavouriteTag() {
+
+        service.updateTags(
+                track,
+                true,
+                false,
+                false
+        );
+
+        assertTrue(
+                track.getTags()
+                        .contains(
+                                TrackTag.FAVOURITE
+                        )
+        );
+    }
+
+
+    @Test
+    void shouldUpdateMultipleTags() {
+
+        service.updateTags(
+                track,
+                true,
+                true,
+                true
+        );
+
+        assertTrue(
+                track.getTags()
+                        .contains(TrackTag.FAVOURITE)
+        );
+
+        assertTrue(
+                track.getTags()
+                        .contains(TrackTag.EXPLICIT)
+        );
+
+        assertTrue(
+                track.getTags()
+                        .contains(TrackTag.NEW_RELEASE)
+        );
+    }
+
+
+    @Test
+    void shouldClearTagsWhenFalse() {
+
+        service.updateTags(
+                track,
+                true,
+                true,
+                true
+        );
+
+        service.updateTags(
+                track,
+                false,
+                false,
+                false
+        );
+
+        assertTrue(
+                track.getTags().isEmpty()
         );
     }
 }

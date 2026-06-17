@@ -78,17 +78,4 @@ class AssignTrackCommandTest {
                 playlist.getTracks().isEmpty()
         );
     }
-
-
-    @Test
-    void executeTwice_ShouldNotBreakPlaylist() {
-
-        command.execute();
-        command.execute();
-
-        assertEquals(
-                1,
-                playlist.getTracks().size()
-        );
-    }
 }

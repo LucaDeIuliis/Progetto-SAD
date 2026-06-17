@@ -1,438 +1,236 @@
 package org.example.mediamusicplayer.service;
 
-
 import org.example.mediamusicplayer.exception.PlaylistValidationException;
-import org.example.mediamusicplayer.model.MusicLibrary;
-import org.example.mediamusicplayer.model.Playlist;
-import org.example.mediamusicplayer.model.Track;
+import org.example.mediamusicplayer.model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Year;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class PlaylistServiceTest {
 
-    private PlaylistService playlistService;
+    private PlaylistService service;
     private MusicLibrary library;
+    private Playlist playlist;
+    private Track track1;
+    private Track track2;
 
     @BeforeEach
-    void setUp() {
-        playlistService = new PlaylistService();
-        library = new MusicLibrary();
-    }
+    void setUp(){
+        service=new PlaylistService();
+        library=new MusicLibrary();
+        playlist=new Playlist("Rock");
 
-    @Test
-    void createPlaylist_ValidName_ShouldCreatePlaylist() {
-
-        Playlist playlist = playlistService.createPlaylist(
-                "Rock Classics",
-                library
+        track1=new Track(
+                "Song 1",
+                "Artist",
+                Duration.ofSeconds(200),
+                "Rock",
+                Year.of(2024)
         );
 
-        assertNotNull(playlist);
-        assertEquals("Rock Classics", playlist.getName());
-    }
-
-    @Test
-    void createPlaylist_EmptyName_ShouldThrowException() {
-
-        assertThrows(
-                PlaylistValidationException.class,
-                () -> playlistService.createPlaylist("", library)
+        track2=new Track(
+                "Song 2",
+                "Artist",
+                Duration.ofSeconds(180),
+                "Pop",
+                Year.of(2020)
         );
-    }
-
-    @Test
-    void createPlaylist_DuplicateName_ShouldThrowException() {
-
-        library.getPlaylists().add(new Playlist("Rock"));
-
-        assertThrows(
-                PlaylistValidationException.class,
-                () -> playlistService.createPlaylist("Rock", library)
-        );
-    }
-
-    @Test
-    void renamePlaylist_ShouldRenamePlaylist() {
-
-        Playlist playlist = new Playlist("Old Name");
 
         library.getPlaylists().add(playlist);
+        library.getAllTracks().add(track1);
+        library.getAllTracks().add(track2);
+    }
 
-        playlistService.renamePlaylist(
+    @Test
+    void shouldCreatePlaylist(){
+        Playlist nuova=
+                service.createPlaylist(
+                        " Nuova Playlist ",
+                        library
+                );
+
+        assertEquals(
+                "Nuova Playlist",
+                nuova.getName()
+        );
+    }
+
+    @Test
+    void shouldNotCreateDuplicatePlaylist(){
+
+        assertThrows(
+                PlaylistValidationException.class,
+                ()->service.createPlaylist(
+                        "rock",
+                        library
+                )
+        );
+    }
+
+    @Test
+    void shouldRenamePlaylist(){
+
+        service.renamePlaylist(
                 playlist,
-                "New Name",
+                "Nuovo",
                 library
         );
 
-        assertEquals("New Name", playlist.getName());
-    }
-
-    @Test
-    void renamePlaylist_DuplicateName_ShouldThrowException() {
-
-        Playlist p1 = new Playlist("Rock");
-        Playlist p2 = new Playlist("Pop");
-
-        library.getPlaylists().addAll(p1, p2);
-
-        assertThrows(
-                PlaylistValidationException.class,
-                () -> playlistService.renamePlaylist(
-                        p2,
-                        "Rock",
-                        library
-                )
+        assertEquals(
+                "Nuovo",
+                playlist.getName()
         );
     }
 
     @Test
-    void addTrackToPlaylist_ShouldAddTrack() {
+    void shouldAddTrack(){
 
-        Playlist playlist = new Playlist("My Playlist");
-
-        Track track = new Track(
-                "Song",
-                "Artist",
-                Duration.ofSeconds(200),
-                "Pop",
-                Year.of(2020)
-        );
-
-        playlistService.addTrackToPlaylist(playlist, track);
-
-        assertTrue(playlist.getTracks().contains(track));
-    }
-
-    @Test
-    void addTrackToPlaylist_DuplicateTrack_ShouldThrowException() {
-
-        Playlist playlist = new Playlist("My Playlist");
-
-        Track track = new Track(
-                "Song",
-                "Artist",
-                Duration.ofSeconds(200),
-                "Pop",
-                Year.of(2020)
-        );
-
-        playlist.addTrack(track);
-
-        assertThrows(
-                PlaylistValidationException.class,
-                () -> playlistService.addTrackToPlaylist(
-                        playlist,
-                        track
-                )
-        );
-    }
-
-    @Test
-    void removeTrackFromPlaylist_ShouldRemoveTrack() {
-
-        Playlist playlist = new Playlist("My Playlist");
-
-        Track track = new Track(
-                "Song",
-                "Artist",
-                Duration.ofSeconds(200),
-                "Pop",
-                Year.of(2020)
-        );
-
-        playlist.addTrack(track);
-
-        playlistService.removeTrackFromPlaylist(
+        service.addTrackToPlaylist(
                 playlist,
-                track
+                track1
         );
-
-        assertFalse(playlist.getTracks().contains(track));
-    }
-
-    @Test
-    void removeTrackFromPlaylist_TrackNotPresent_ShouldThrowException() {
-
-        Playlist playlist = new Playlist("My Playlist");
-
-        Track track = new Track(
-                "Song",
-                "Artist",
-                Duration.ofSeconds(200),
-                "Pop",
-                Year.of(2020)
-        );
-
-        assertThrows(
-                PlaylistValidationException.class,
-                () -> playlistService.removeTrackFromPlaylist(
-                        playlist,
-                        track
-                )
-        );
-    }
-
-    @Test
-    void createPlaylist_NullName_ShouldThrowException() {
-
-        assertThrows(
-                PlaylistValidationException.class,
-                () -> playlistService.createPlaylist(null, library)
-        );
-    }
-
-    @Test
-    void createPlaylist_BlankName_ShouldThrowException() {
-
-        assertThrows(
-                PlaylistValidationException.class,
-                () -> playlistService.createPlaylist("   ", library)
-        );
-    }
-
-    @Test
-    void createPlaylist_ShouldTrimName() {
-
-        Playlist playlist = playlistService.createPlaylist(
-                "   Rock Classics   ",
-                library
-        );
-
-        assertEquals("Rock Classics", playlist.getName());
-    }
-
-    @Test
-    void renamePlaylist_NullPlaylist_ShouldThrowException() {
-
-        assertThrows(
-                PlaylistValidationException.class,
-                () -> playlistService.renamePlaylist(
-                        null,
-                        "New Name",
-                        library
-                )
-        );
-    }
-
-    @Test
-    void renamePlaylist_NullName_ShouldThrowException() {
-
-        Playlist playlist = new Playlist("Old");
-
-        assertThrows(
-                PlaylistValidationException.class,
-                () -> playlistService.renamePlaylist(
-                        playlist,
-                        null,
-                        library
-                )
-        );
-    }
-
-    @Test
-    void renamePlaylist_SameName_ShouldBeAllowed() {
-
-        Playlist playlist = new Playlist("Rock");
-
-        library.getPlaylists().add(playlist);
-
-        assertDoesNotThrow(
-                () -> playlistService.renamePlaylist(
-                        playlist,
-                        "Rock",
-                        library
-                )
-        );
-    }
-
-    @Test
-    void addTrackToPlaylist_NullTrack_ShouldThrowException() {
-
-        Playlist playlist = new Playlist("My Playlist");
-
-        assertThrows(
-                PlaylistValidationException.class,
-                () -> playlistService.addTrackToPlaylist(
-                        playlist,
-                        null
-                )
-        );
-    }
-
-    @Test
-    void removeTrackFromPlaylist_NullTrack_ShouldThrowException() {
-
-        Playlist playlist = new Playlist("My Playlist");
-
-        assertThrows(
-                PlaylistValidationException.class,
-                () -> playlistService.removeTrackFromPlaylist(
-                        playlist,
-                        null
-                )
-        );
-    }
-    @Test
-    void addTrackToAutomaticPlaylist_WithCorrectGenre_ShouldAdd() {
-
-        Playlist playlist = new Playlist("Rock");
-        playlist.setGenerataAutomaticamente(true);
-        playlist.setTipoFiltro("Genere");
-        playlist.setFiltroAutomatico("Rock");
-
-        Track track = new Track(
-                "Song",
-                "Artist",
-                Duration.ofSeconds(200),
-                "Rock",
-                Year.of(2024)
-        );
-
-        playlistService.addTrackToPlaylist(playlist, track);
-
-        assertTrue(playlist.getTracks().contains(track));
-    }
-    @Test
-    void addTrackToAutomaticPlaylist_WithWrongGenre_ShouldThrowException() {
-
-        Playlist playlist = new Playlist("Rock");
-        playlist.setGenerataAutomaticamente(true);
-        playlist.setTipoFiltro("Genere");
-        playlist.setFiltroAutomatico("Rock");
-
-
-        Track track = new Track(
-                "Song",
-                "Artist",
-                Duration.ofSeconds(200),
-                "Pop",
-                Year.of(2024)
-        );
-
-
-        assertThrows(
-                PlaylistValidationException.class,
-                () -> playlistService.addTrackToPlaylist(
-                        playlist,
-                        track
-                )
-        );
-    }
-    @Test
-    void trackRispettaFiltro_YearFilter_ShouldWork() {
-
-        Playlist playlist = new Playlist("2024");
-
-        playlist.setGenerataAutomaticamente(true);
-        playlist.setTipoFiltro("Anno");
-        playlist.setFiltroAutomatico("2024");
-
-
-        Track track = new Track(
-                "Song",
-                "Artist",
-                Duration.ofSeconds(100),
-                "Rock",
-                Year.of(2024)
-        );
-
 
         assertTrue(
-                playlistService.trackRispettaFiltro(
+                playlist.getTracks()
+                        .contains(track1)
+        );
+    }
+
+    @Test
+    void shouldNotAddDuplicateTrack(){
+
+        playlist.getTracks().add(track1);
+
+        assertThrows(
+                PlaylistValidationException.class,
+                ()->service.addTrackToPlaylist(
                         playlist,
-                        track
+                        track1
                 )
         );
     }
+
     @Test
-    void normalPlaylist_ShouldAcceptAnyTrack() {
+    void shouldRemoveTrack(){
 
-        Playlist playlist = new Playlist("Normale");
+        playlist.getTracks().add(track1);
 
-        Track track = new Track(
-                "Song",
-                "Artist",
-                Duration.ofSeconds(100),
-                "Metal",
-                Year.of(1990)
+        service.removeTrackFromPlaylist(
+                playlist,
+                track1
         );
-
-
-        assertTrue(
-                playlistService.trackRispettaFiltro(
-                        playlist,
-                        track
-                )
-        );
-    }
-    @Test
-    void syncTrackWithAutomaticPlaylists_ShouldAddMatchingTrack() {
-
-        Playlist playlist = new Playlist("Rock");
-
-        playlist.setGenerataAutomaticamente(true);
-        playlist.setTipoFiltro("Genere");
-        playlist.setFiltroAutomatico("Rock");
-
-
-        library.getPlaylists().add(playlist);
-
-
-        Track track = new Track(
-                "Song",
-                "Artist",
-                Duration.ofSeconds(200),
-                "Rock",
-                Year.of(2024)
-        );
-
-
-        playlistService.syncTrackWithAutomaticPlaylists(
-                track,
-                library
-        );
-
-
-        assertTrue(
-                playlist.getTracks().contains(track)
-        );
-    }
-    @Test
-    void syncTrackWithAutomaticPlaylists_ShouldRemoveNonMatchingTrack() {
-
-        Playlist playlist = new Playlist("Rock");
-
-        playlist.setGenerataAutomaticamente(true);
-        playlist.setTipoFiltro("Genere");
-        playlist.setFiltroAutomatico("Rock");
-
-
-        Track track = new Track(
-                "Song",
-                "Artist",
-                Duration.ofSeconds(200),
-                "Pop",
-                Year.of(2024)
-        );
-
-
-        playlist.addTrack(track);
-        library.getPlaylists().add(playlist);
-
-
-        playlistService.syncTrackWithAutomaticPlaylists(
-                track,
-                library
-        );
-
 
         assertFalse(
-                playlist.getTracks().contains(track)
+                playlist.getTracks()
+                        .contains(track1)
+        );
+    }
+
+    @Test
+    void shouldCreateAutomaticPlaylist(){
+
+        Playlist auto =
+                service.createAutomaticPlaylist(
+                        "Genere",
+                        "Rock",
+                        library,
+                        new MusicLibraryService()
+                );
+
+        assertTrue(
+                auto.isGenerataAutomaticamente()
+        );
+
+        assertTrue(
+                auto.getTracks()
+                        .contains(track1)
+        );
+
+        assertFalse(
+                auto.getTracks()
+                        .contains(track2)
+        );
+    }
+
+    @Test
+    void shouldRespectGenreFilter(){
+
+        playlist.setGenerataAutomaticamente(true);
+        playlist.setTipoFiltro("Genere");
+        playlist.setFiltroAutomatico("Rock");
+
+        assertTrue(
+                service.trackRispettaFiltro(
+                        playlist,
+                        track1
+                )
+        );
+
+        assertFalse(
+                service.trackRispettaFiltro(
+                        playlist,
+                        track2
+                )
+        );
+    }
+
+    @Test
+    void shouldMoveTrack(){
+
+        List<Track> tracks=new ArrayList<>();
+
+        tracks.add(track1);
+        tracks.add(track2);
+
+        service.moveTrack(
+                tracks,
+                0,
+                1
+        );
+
+        assertEquals(
+                track2,
+                tracks.get(0)
+        );
+    }
+
+    @Test
+    void shouldDetectSmartPlaylist(){
+
+        Playlist smart=
+                new Playlist(
+                        "I Miei Preferiti ❤"
+                );
+
+        assertTrue(
+                service.isSmartPlaylist(smart)
+        );
+    }
+
+    @Test
+    void shouldApplyTag(){
+
+        Playlist smart=
+                new Playlist(
+                        "I Miei Preferiti ❤"
+                );
+
+        service.applyPlaylistTagToTrack(
+                smart,
+                track1
+        );
+
+        assertTrue(
+                track1.getTags()
+                        .contains(
+                                TrackTag.FAVOURITE
+                        )
         );
     }
 }

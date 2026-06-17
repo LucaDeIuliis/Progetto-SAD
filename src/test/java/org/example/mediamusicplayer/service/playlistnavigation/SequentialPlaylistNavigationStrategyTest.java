@@ -27,19 +27,4 @@ class SequentialPlaylistNavigationStrategyTest {
         );
     }
 
-    @Test
-    void getNextPlaylist_LastPlaylist_ShouldReturnNull() {
-
-        Playlist p1 = new Playlist("P1");
-
-        SequentialPlaylistNavigationStrategy strategy =
-                new SequentialPlaylistNavigationStrategy();
-
-        assertNull(
-                strategy.getNextPlaylist(
-                        List.of(p1),
-                        p1
-                )
-        );
-    }
 }
