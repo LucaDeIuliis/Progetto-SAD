@@ -156,6 +156,9 @@ public class MusicPlayerController implements PlaybackObserver {
                 if (tracciaSelezionata != null) {
                     audioPlayerService.playTrack(tracciaSelezionata, getCurrentTrackList());
                     playlistCorrente = playlistAttuale;
+                    playlistInRiproduzione = playlistAttuale;
+
+                    updateCurrentPlaylistLabel();
                     setPauseButtonState();
                     showSkipButton();
                 }
@@ -506,6 +509,9 @@ public class MusicPlayerController implements PlaybackObserver {
         if (!tracciaSelezionata.equals(tracciaCorrente)) {
             audioPlayerService.playTrack(tracciaSelezionata, getCurrentTrackList());
             playlistCorrente = playlistAttuale;
+            playlistInRiproduzione = playlistAttuale;
+
+            updateCurrentPlaylistLabel();
             setPauseButtonState();
             showSkipButton();
             return;
