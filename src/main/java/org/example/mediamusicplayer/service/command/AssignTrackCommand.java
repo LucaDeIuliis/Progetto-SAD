@@ -1,7 +1,5 @@
 package org.example.mediamusicplayer.service.command;
 
-
-import org.example.mediamusicplayer.exception.PlaylistValidationException;
 import org.example.mediamusicplayer.model.Playlist;
 import org.example.mediamusicplayer.model.Track;
 import org.example.mediamusicplayer.service.PlaylistService;
@@ -21,14 +19,12 @@ public class AssignTrackCommand implements Command {
 
     @Override
     public void execute() {
-        try {
-            playlistService.addTrackToPlaylist(playlist, traccia);
-            successfullyAdded = true;
-        } catch (PlaylistValidationException e) {
-            // Il Controller gestirà l'eccezione prima, qui non dovrebbe mai arrivare,
-            // ma lo gestiamo per sicurezza.
-            successfullyAdded = false;
-        }
+        playlistService.addTrackToPlaylist(
+                playlist,
+                traccia
+        );
+
+        successfullyAdded = true;
     }
 
     @Override

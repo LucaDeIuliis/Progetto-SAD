@@ -3,7 +3,7 @@ package org.example.mediamusicplayer.service;
 import org.example.mediamusicplayer.exception.TrackValidationException;
 import org.example.mediamusicplayer.model.MusicLibrary;
 import org.example.mediamusicplayer.model.Track;
-
+import org.example.mediamusicplayer.model.TrackTag;
 import java.time.Duration;
 import java.time.Year;
 
@@ -165,5 +165,32 @@ public class TrackService {
         track.setGenre(genre.trim());
         track.setYear(year);
         track.setLength(length);
+    }
+    public void updateTags(
+            Track track,
+            boolean favourite,
+            boolean explicit,
+            boolean newRelease
+    ) {
+        if (track == null) {
+            throw new TrackValidationException(
+                    "Errore di sistema",
+                    "La traccia da aggiornare non è disponibile."
+            );
+        }
+
+        track.getTags().clear();
+
+        if (favourite) {
+            track.addTag(TrackTag.FAVOURITE);
+        }
+
+        if (explicit) {
+            track.addTag(TrackTag.EXPLICIT);
+        }
+
+        if (newRelease) {
+            track.addTag(TrackTag.NEW_RELEASE);
+        }
     }
 }

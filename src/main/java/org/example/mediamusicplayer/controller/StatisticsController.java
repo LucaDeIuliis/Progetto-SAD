@@ -7,8 +7,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.stage.Stage;
 import javafx.geometry.Pos;
 import org.example.mediamusicplayer.model.MusicLibrary;
@@ -26,23 +24,19 @@ public class StatisticsController {
     @FXML private Label emptyTracksLabel;
     @FXML private Label emptyPlaylistsLabel;
 
-    private MusicLibrary libreria;
-    private PlaybackStatisticsService playbackStatisticsService;
-    private Scene playerScene;
+    private final MusicLibrary libreria;
+    private final PlaybackStatisticsService playbackStatisticsService;
+    private final Scene playerScene;
 
     @FXML
     public void initialize() {
         configureListViewStyle();
+        updateStatistics();
     }
-
-    public void setData(MusicLibrary libreria,
-                        PlaybackStatisticsService playbackStatisticsService,
-                        Scene playerScene) {
+    public StatisticsController(MusicLibrary libreria, PlaybackStatisticsService playbackStatisticsService, Scene playerScene) {
         this.libreria = libreria;
         this.playbackStatisticsService = playbackStatisticsService;
         this.playerScene = playerScene;
-
-        updateStatistics();
     }
 
     private void updateStatistics() {

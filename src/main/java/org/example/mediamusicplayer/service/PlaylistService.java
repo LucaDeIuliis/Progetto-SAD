@@ -68,43 +68,30 @@ public class PlaylistService {
             Playlist playlist,
             Track track
     ) {
-
-
         if (playlist == null) {
             throw new PlaylistValidationException(
-                    "Nessuna Playlist",
+                    "Playlist non disponibile",
                     "Seleziona una playlist valida."
             );
         }
 
-
         if (track == null) {
             throw new PlaylistValidationException(
-                    "Nessuna Traccia",
+                    "Traccia non disponibile",
                     "Seleziona una traccia valida."
             );
         }
 
-
-        if (!trackRispettaFiltro(playlist, track)) {
-
-            throw new PlaylistValidationException(
-                    "Filtro non rispettato",
-                    "La traccia non soddisfa i criteri della playlist automatica."
-            );
-        }
-
-
         if (playlist.getTracks().contains(track)) {
-
             throw new PlaylistValidationException(
-                    "Già presente",
-                    "Questa traccia è già presente nella playlist."
+                    "Traccia già presente",
+                    "La traccia è già presente nella playlist "
+                            + playlist.getName()
+                            + "."
             );
         }
 
-
-        playlist.addTrack(track);
+        playlist.getTracks().add(track);
     }
 
     // =========================================================
@@ -177,44 +164,31 @@ public class PlaylistService {
             Track track,
             MusicLibrary library
     ) {
+        for (Playlist playlist : library.getPlaylists()) {
 
-
-        for (Playlist playlist :
-                library.getPlaylists()) {
-
-
-            if (!playlist.isGenerataAutomaticamente())
+            if (!playlist.isGenerataAutomaticamente()
+                    || isSmartPlaylist(playlist)) {
                 continue;
+            }
 
-
-            // prima rimuovo
             playlist.removeTrack(track);
 
-
-
-            // poi eventualmente aggiungo
-            if(trackRispettaFiltro(playlist, track)) {
-
+            if (trackRispettaFiltro(playlist, track)) {
                 playlist.addTrack(track);
-
             }
         }
     }
-    public void syncSmartPlaylists(
-            MusicLibrary library,
-            MusicLibraryService libraryService
-    ) {
 
+    public void syncSmartPlaylists(MusicLibrary library, MusicLibraryService libraryService) {
         for (TrackTag tag : TrackTag.values()) {
-
             String nomeBase = switch (tag) {
                 case FAVOURITE -> "I Miei Preferiti";
                 case EXPLICIT -> "Brani Espliciti";
                 case NEW_RELEASE -> "Nuove Uscite";
             };
 
-            String nomeCompleto = nomeBase + " " + tag.getSymbol();
-
+            String nomeCompleto =
+                    nomeBase + " " + tag.getSymbol();
 
             java.util.List<Track> tracceTaggate =
                     library.getAllTracks()
@@ -224,29 +198,38 @@ public class PlaylistService {
                             )
                             .toList();
 
-
-            Playlist playlistEsistente =
+            java.util.List<Playlist> playlistConStessoNome =
                     library.getPlaylists()
                             .stream()
-                            .filter(p ->
-                                    p.getName().equals(nomeCompleto)
+                            .filter(playlist ->
+                                    playlist.getName().equals(nomeCompleto)
                             )
-                            .findFirst()
-                            .orElse(null);
+                            .toList();
 
+            Playlist playlistEsistente =
+                    playlistConStessoNome.isEmpty()
+                            ? null
+                            : playlistConStessoNome.get(0);
 
+            for (int i = 1;
+                 i < playlistConStessoNome.size();
+                 i++) {
+
+                libraryService.deletePlaylist(
+                        library,
+                        playlistConStessoNome.get(i)
+                );
+            }
 
             if (playlistEsistente != null) {
 
-                // aggiorno le tracce
-                playlistEsistente.getTracks().clear();
+                playlistEsistente
+                        .getTracks()
+                        .setAll(tracceTaggate);
 
-                playlistEsistente.getTracks()
-                        .addAll(tracceTaggate);
-
-
-                // NUOVO: se la Smart Playlist è vuota la elimino
-                if (playlistEsistente.getTracks().isEmpty()) {
+                if (playlistEsistente
+                        .getTracks()
+                        .isEmpty()) {
 
                     libraryService.deletePlaylist(
                             library,
@@ -254,22 +237,18 @@ public class PlaylistService {
                     );
                 }
 
-
             } else if (!tracceTaggate.isEmpty()) {
-
 
                 Playlist nuovaAuto =
                         new Playlist(nomeCompleto);
-
 
                 nuovaAuto.setGenerataAutomaticamente(true);
                 nuovaAuto.setTipoFiltro(null);
                 nuovaAuto.setFiltroAutomatico(null);
 
-
-                nuovaAuto.getTracks()
+                nuovaAuto
+                        .getTracks()
                         .addAll(tracceTaggate);
-
 
                 libraryService.addPlaylist(
                         library,
@@ -277,5 +256,182 @@ public class PlaylistService {
                 );
             }
         }
+    }
+
+    public boolean isSmartPlaylist(Playlist playlist) {
+        if (playlist == null) {
+            return false;
+        }
+        return getTagFromPlaylistName(playlist.getName()) != null;
+    }
+
+    public TrackTag getTagFromPlaylistName(String playlistName) {
+        if (playlistName == null) {
+            return null;
+        }
+        for (TrackTag tag : TrackTag.values()) {
+            String nomeBase = switch (tag) {
+                case FAVOURITE -> "I Miei Preferiti";
+                case EXPLICIT -> "Brani Espliciti";
+                case NEW_RELEASE -> "Nuove Uscite";
+            };
+            String nomeCompleto = nomeBase + " " + tag.getSymbol();
+            if (playlistName.equals(nomeCompleto)) {
+                return tag;
+            }
+        }
+        return null;
+    }
+
+    public Playlist createAutomaticPlaylist(
+            String tipoFiltro,
+            String filtro,
+            MusicLibrary library,
+            MusicLibraryService libraryService
+    ) {
+        if (tipoFiltro == null
+                || (!tipoFiltro.equals("Genere")
+                && !tipoFiltro.equals("Anno"))) {
+            throw new PlaylistValidationException(
+                    "Tipo filtro non valido",
+                    "Seleziona un tipo di filtro valido."
+            );
+        }
+
+        if (filtro == null || filtro.trim().isEmpty()) {
+            throw new PlaylistValidationException(
+                    "Filtro mancante",
+                    "Inserisci un genere o un anno."
+            );
+        }
+
+        String filtroPulito = filtro.trim();
+        String nomePlaylist =
+                "Auto - " + tipoFiltro + " " + filtroPulito;
+
+        Playlist nuovaPlaylist =
+                createPlaylist(nomePlaylist, library);
+
+        nuovaPlaylist.setGenerataAutomaticamente(true);
+        nuovaPlaylist.setTipoFiltro(tipoFiltro);
+        nuovaPlaylist.setFiltroAutomatico(filtroPulito);
+
+        for (Track track : library.getAllTracks()) {
+            if (trackRispettaFiltro(nuovaPlaylist, track)) {
+                nuovaPlaylist.addTrack(track);
+            }
+        }
+
+        if (nuovaPlaylist.getTracks().isEmpty()) {
+            throw new PlaylistValidationException(
+                    "Nessun risultato",
+                    "Non sono state trovate tracce compatibili."
+            );
+        }
+
+        libraryService.addPlaylist(
+                library,
+                nuovaPlaylist
+        );
+
+        return nuovaPlaylist;
+    }
+
+    public void validateTrackDataForAutomaticPlaylist(
+            Playlist playlist,
+            String genre,
+            String year
+    ) {
+        if (playlist == null || !playlist.isGenerataAutomaticamente()) {
+            return;
+        }
+
+        String tipoFiltro = playlist.getTipoFiltro();
+        String filtro = playlist.getFiltroAutomatico();
+
+        if (tipoFiltro == null || filtro == null) {
+            return;
+        }
+
+        boolean compatibile = switch (tipoFiltro) {
+            case "Genere" ->
+                    genre != null
+                            && genre.trim().equalsIgnoreCase(filtro);
+
+            case "Anno" ->
+                    year != null
+                            && year.trim().equals(filtro);
+
+            default -> true;
+        };
+
+        if (!compatibile) {
+            throw new PlaylistValidationException(
+                    "Traccia non compatibile",
+                    "La traccia non rispetta il filtro della playlist automatica."
+            );
+        }
+    }
+
+    public void moveTrack(
+            java.util.List<Track> tracks,
+            int sourceIndex,
+            int targetIndex
+    ) {
+        if (tracks == null) {
+            throw new PlaylistValidationException(
+                    "Lista non disponibile",
+                    "Non è possibile riordinare le tracce."
+            );
+        }
+
+        if (sourceIndex < 0
+                || sourceIndex >= tracks.size()
+                || targetIndex < 0
+                || targetIndex > tracks.size()) {
+            throw new PlaylistValidationException(
+                    "Posizione non valida",
+                    "Non è possibile spostare la traccia nella posizione richiesta."
+            );
+        }
+
+        Track track = tracks.remove(sourceIndex);
+
+        if (targetIndex > tracks.size()) {
+            targetIndex = tracks.size();
+        }
+
+        tracks.add(targetIndex, track);
+    }
+
+    public void applyPlaylistTagToTrack(
+            Playlist playlist,
+            Track track
+    ) {
+        if (playlist == null || track == null) {
+            return;
+        }
+
+        if (!isSmartPlaylist(playlist)) {
+            return;
+        }
+
+        TrackTag tag = getTagFromPlaylistName(
+                playlist.getName()
+        );
+
+        if (tag != null) {
+            track.addTag(tag);
+        }
+    }
+
+    public TrackTag getTagFromPlaylist(Playlist playlist) {
+        if (playlist == null) {
+            return null;
+        }
+
+        return getTagFromPlaylistName(
+                playlist.getName()
+        );
     }
 }
