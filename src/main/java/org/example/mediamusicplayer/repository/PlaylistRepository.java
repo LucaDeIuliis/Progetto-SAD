@@ -2,10 +2,14 @@ package org.example.mediamusicplayer.repository;
 
 import org.example.mediamusicplayer.model.Playlist;
 import org.example.mediamusicplayer.persistence.DatabaseManager;
-
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import org.example.mediamusicplayer.model.Track;
+import java.util.Map;
 
 public class PlaylistRepository {
 
@@ -17,14 +21,21 @@ public class PlaylistRepository {
 
     public void save(Playlist playlist) {
         String sql = """
-                INSERT OR REPLACE INTO playlists (
+                INSERT INTO playlists (
                     id,
                     name,
                     generated_automatically,
                     filter_type,
                     automatic_filter,
                     play_count
-                ) VALUES (?, ?, ?, ?, ?, ?)
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    name = excluded.name,
+                    generated_automatically = excluded.generated_automatically,
+                    filter_type = excluded.filter_type,
+                    automatic_filter = excluded.automatic_filter,
+                    play_count = excluded.play_count
                 """;
 
         try (Connection connection = databaseManager.getConnection();
@@ -111,6 +122,87 @@ public class PlaylistRepository {
         } catch (SQLException e) {
             throw new RuntimeException(
                     "Errore durante l'eliminazione della playlist",
+                    e
+            );
+        }
+    }
+
+    public List<Playlist> findAll() {
+        String sql = """
+            SELECT
+                id,
+                name,
+                generated_automatically,
+                filter_type,
+                automatic_filter,
+                play_count
+            FROM playlists
+            ORDER BY rowid
+            """;
+
+        List<Playlist> playlists = new ArrayList<>();
+
+        try (Connection connection = databaseManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                Playlist playlist = new Playlist(
+                        resultSet.getString("name")
+                );
+
+                playlist.setId(resultSet.getString("id"));
+                playlist.setGenerataAutomaticamente(
+                        resultSet.getInt("generated_automatically") == 1
+                );
+                playlist.setTipoFiltro(resultSet.getString("filter_type"));
+                playlist.setFiltroAutomatico(resultSet.getString("automatic_filter"));
+                playlist.setPlayCount(resultSet.getInt("play_count"));
+
+                playlists.add(playlist);
+            }
+
+            return playlists;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Errore durante il caricamento delle playlist",
+                    e
+            );
+        }
+    }
+
+    public void loadPlaylistTracks(
+            Map<String, Playlist> playlistsById,
+            Map<String, Track> tracksById
+    ) {
+        String sql = """
+            SELECT
+                playlist_id,
+                track_id
+            FROM playlist_tracks
+            ORDER BY playlist_id, track_order
+            """;
+
+        try (Connection connection = databaseManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                Playlist playlist =
+                        playlistsById.get(resultSet.getString("playlist_id"));
+
+                Track track =
+                        tracksById.get(resultSet.getString("track_id"));
+
+                if (playlist != null && track != null) {
+                    playlist.getTracks().add(track);
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Errore durante il caricamento delle tracce delle playlist",
                     e
             );
         }

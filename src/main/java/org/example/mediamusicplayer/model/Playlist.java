@@ -2,6 +2,7 @@ package org.example.mediamusicplayer.model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import java.util.Map;
 import java.util.UUID;
 
 public class Playlist {
@@ -13,7 +14,7 @@ public class Playlist {
     // "Genere" oppure "Anno"
     private String tipoFiltro;
 
-    // es. "Rock" oppure "2024"
+    // Es. "Rock" oppure "2024"
     private String filtroAutomatico;
 
     private int playCount;
@@ -83,6 +84,7 @@ public class Playlist {
         return filtroAutomatico;
     }
 
+    public void setPlayCount(int playCount) { this.playCount = playCount; }
 
     public void setFiltroAutomatico(String filtroAutomatico) {
         this.filtroAutomatico = filtroAutomatico;
@@ -91,6 +93,26 @@ public class Playlist {
     public String getId() { return id; }
 
     public void setId(String id) { this.id = id; }
+
+    public Playlist copy(Map<String, Track> copiedTracksById) {
+        Playlist copy = new Playlist(this.name);
+
+        copy.setId(this.id);
+        copy.setGenerataAutomaticamente(this.generataAutomaticamente);
+        copy.setTipoFiltro(this.tipoFiltro);
+        copy.setFiltroAutomatico(this.filtroAutomatico);
+        copy.setPlayCount(this.playCount);
+
+        for (Track originalTrack : this.tracks) {
+            Track copiedTrack = copiedTracksById.get(originalTrack.getId());
+
+            if (copiedTrack != null) {
+                copy.getTracks().add(copiedTrack);
+            }
+        }
+
+        return copy;
+    }
 
     @Override
     public String toString() {

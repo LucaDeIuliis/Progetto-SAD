@@ -213,6 +213,7 @@ public class MusicPlayerController implements PlaybackObserver {
                 }
             }
         });
+        loadLibraryAsync();
     }
 
     // === GESTIONE UNDO (Delegata al CommandManager) ===
@@ -337,6 +338,8 @@ public class MusicPlayerController implements PlaybackObserver {
          * in cui ne viene effettivamente avviata la prima traccia.
          */
         playbackStatisticsService.registerPlaylistPlayback(playlist);
+        saveLibraryAsync();
+
         playlistInRiproduzione = playlist;
         playlistCorrente = playlist;
         updateCurrentPlaylistLabel();
@@ -391,6 +394,12 @@ public class MusicPlayerController implements PlaybackObserver {
         persistenceService.saveLibraryAsync(libreria);
     }
 
+    public void shutdown() {
+        if (persistenceService != null) {
+            persistenceService.shutdown();
+        }
+    }
+
     @Override
     public void onTimeUpdate(String currentTime, Track currentTrack) {
         if (currentTrack != null) {
@@ -416,8 +425,8 @@ public class MusicPlayerController implements PlaybackObserver {
     @Override
     public void onTrackHalfPlayed(Track track) {
         playbackStatisticsService.registerTrackPlayback(track);
+        saveLibraryAsync();
     }
-
     @Override
     public void onPlaybackFinished() {
         hideSkipButton();
@@ -612,6 +621,22 @@ public class MusicPlayerController implements PlaybackObserver {
     private void hideSkipPlaylistButton() {
         skipPlaylistButton.setVisible(false);
         skipPlaylistButton.setManaged(false);
+    }
+
+    private void loadLibraryAsync() {
+        persistenceService.loadLibraryAsync(loadedLibrary -> {
+                    libreria.getAllTracks().setAll(loadedLibrary.getAllTracks());
+                    libreria.getPlaylists().setAll(loadedLibrary.getPlaylists());
+                    refreshTableUI();
+                },
+                error -> {
+                    error.printStackTrace();
+                    AlertUtil.showError(
+                            "Errore di caricamento",
+                            "Impossibile caricare la libreria dal database."
+                    );
+                }
+        );
     }
 
     @FXML
@@ -940,6 +965,7 @@ public class MusicPlayerController implements PlaybackObserver {
             playlistComboBox.setItems(normalPlaylistsOnly);
 
             commandManager.clearHistory();
+            saveLibraryAsync();
 
         } catch (PlaylistValidationException e) {
             AlertUtil.showError(e.getHeader(), e.getMessage());

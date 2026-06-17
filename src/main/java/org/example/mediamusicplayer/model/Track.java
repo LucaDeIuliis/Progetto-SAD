@@ -62,6 +62,7 @@ public class Track {
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
+    public void setPlayCount(int playCount) { this.playCount = playCount; }
     // === GESTIONE DEI TAG VISUALI ===
 
     public Set<TrackTag> getTags() {
@@ -94,9 +95,28 @@ public class Track {
         if (length == null) return "0:00";
 
         long minutes = length.toMinutes(); // Estrae i minuti totali
-        int seconds = length.toSecondsPart(); // Estrae solo i secondi rimanenti (es. i 45 di "3:45")
+        int seconds = length.toSecondsPart(); // Estrae solo i secondi rimanenti (es. I 45 di "3:45")
 
         return String.format("%d:%02d", minutes, seconds);
+    }
+
+    public Track copy() {
+        Track copy = new Track(
+                this.title,
+                this.author,
+                this.length,
+                this.genre,
+                this.year
+        );
+
+        copy.setId(this.id);
+        copy.setPlayCount(this.playCount);
+
+        for (TrackTag tag : this.tags) {
+            copy.addTag(tag);
+        }
+
+        return copy;
     }
 
     @Override

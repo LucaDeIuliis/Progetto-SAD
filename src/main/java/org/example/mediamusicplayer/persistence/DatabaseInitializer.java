@@ -50,8 +50,20 @@ public class DatabaseInitializer {
                     )
                     """);
 
+            statement.execute("""
+                    CREATE TABLE IF NOT EXISTS track_tags (
+                        track_id TEXT NOT NULL,
+                        tag TEXT NOT NULL,
+                        PRIMARY KEY (track_id, tag),
+                        FOREIGN KEY (track_id) REFERENCES tracks(id)
+                    )
+                    """);
+
         } catch (SQLException e) {
-            throw new RuntimeException("Errore durante l'inizializzazione del database", e);
+            throw new RuntimeException(
+                    "Errore durante l'inizializzazione del database",
+                    e
+            );
         }
     }
 }
