@@ -234,7 +234,7 @@ public class MusicPlayerController implements PlaybackObserver {
 
     private boolean isSmartPlaylist(Playlist p) {
         if(p == null) return false;
-        return p.isGenerataAutomaticamente() || getTagFromPlaylistName(p.getName()) != null;
+        return getTagFromPlaylistName(p.getName()) != null;
     }
 
     private TrackTag getTagFromPlaylistName(String name) {
@@ -864,30 +864,45 @@ public class MusicPlayerController implements PlaybackObserver {
     }
     @FXML
     public void onDeletePlaylistClick() {
-        Playlist playlistSelezionata = playlistListView.getSelectionModel().getSelectedItem();
-
+        Playlist playlistSelezionata =
+                playlistListView.getSelectionModel().getSelectedItem();
         if (playlistSelezionata == null) {
-            AlertUtil.showError("Nessuna selezione", "Seleziona la playlist che vuoi eliminare dalla barra laterale.");
+            AlertUtil.showError(
+                    "Nessuna selezione",
+                    "Seleziona la playlist che vuoi eliminare dalla barra laterale."
+            );
             return;
         }
-
+        // Blocca solo le Smart Playlist basate sui tag
         if (isSmartPlaylist(playlistSelezionata)) {
-            AlertUtil.showError("Azione non consentita", "Le Smart Playlist non possono essere eliminate manualmente.");
+            AlertUtil.showError(
+                    "Azione non consentita",
+                    "Le playlist automatiche di sistema non possono essere eliminate."
+            );
             return;
         }
-
-        // DELEGAZIONE AL COMMAND MANAGER
         String playlistId = playlistSelezionata.getId();
-        DeletePlaylistCommand cmd = new DeletePlaylistCommand(playlistSelezionata, libreria, libraryService);
+        DeletePlaylistCommand cmd =
+                new DeletePlaylistCommand(
+                        playlistSelezionata,
+                        libreria,
+                        libraryService
+                );
         commandManager.executeCommand(cmd);
         persistenceService.deletePlaylistAsync(playlistId);
-
         if (playlistAttuale == playlistSelezionata) {
             onViewAllTracksClick();
         }
         if (playlistSelezionata == playlistCorrente) {
             playlistCorrente = null;
         }
+        playlistListView.refresh();
+        playlistComboBox.getItems().remove(playlistSelezionata);
+        saveLibraryAsync();
+        AlertUtil.showInfo(
+                "Playlist eliminata",
+                "La playlist è stata eliminata correttamente."
+        );
     }
 
     @FXML
